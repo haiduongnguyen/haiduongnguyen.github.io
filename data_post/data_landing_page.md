@@ -2,6 +2,7 @@
 
 **This contains some contents related to algorithms, use case and my experiences**
 
+🔙 [Back to Home](/)
 
 ## Pages
 

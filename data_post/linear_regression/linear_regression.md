@@ -2,8 +2,10 @@
 title: Linear Regression
 ---
 
+🔙 [Back to Home](/)
 
 ## Linear regression
+
 
 
 # Definition
