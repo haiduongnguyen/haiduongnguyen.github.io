@@ -25,9 +25,11 @@ including segmentation, forecasting, and anomaly detection.
 
 ## ✍️ Writing
 - [My first post](./first-post.html)
+- [Data](./data_post/data_landing_page.md)
+
 
 ---
 
 ## 📬 Contact
-- GitHub: https://github.com/USERNAME
-- LinkedIn: (add later)
+- GitHub: https://github.com/haiduongnguyen
+- LinkedIn: https://www.linkedin.com/in/nguyen-hai-duong-1a34a71ba/
