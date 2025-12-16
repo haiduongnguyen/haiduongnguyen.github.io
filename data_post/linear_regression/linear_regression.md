@@ -1,3 +1,8 @@
+---
+title: Linear Regression
+---
+
+
 ## Linear regression
 
 

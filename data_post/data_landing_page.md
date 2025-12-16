@@ -5,4 +5,4 @@
 
 ## Pages
 
-- [Linear Regression](./linear_regression/linear_regression.md)
+- [Linear Regression](/data_post/linear_regression/linear_regression.html)
