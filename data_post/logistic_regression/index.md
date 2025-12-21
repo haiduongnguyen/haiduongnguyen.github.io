@@ -1,10 +1,24 @@
-![image.png](attachment:c823c00b-9f29-4102-b19f-5a137ed0197b:image.png)
+---
+title: Linear Regression
+---
+
+🔙 [Back to Home](/)
+
+## Linear regression
+
+## Definition
+
+![image.png](images/1.png)
 
 if still use linear regression, some case will be misclass
 
-→ Use Logistic regression
+→ Use Logistic regression for classification problems
 
-![image.png](attachment:e3af4181-91bf-49d4-b934-021807ad23ec:image.png)
+![image.png](images/2.png)
+
+The most important of logistic regression is **sigmoid function** - a function which convert from [-∞, +∞] -> (0, 1). With the output (0,1) it can fit with classification problems (2 class).
+
+So we will deep dive into sigmoid function first, then how apply in logistic regression.
 
 sigmoid function (also called logistic function)
 
@@ -24,49 +38,18 @@ Idea:
 
 When plot the values of x, y  → think out of sigmoid function f(x) = 1 / (1 + e^-bx)
 
-![image.png](attachment:5520cfe1-3468-40a5-acaf-07c186c8c183:image.png)
+![image.png](images/3.png)
 
 Then process bx = log(p / 1-p)
 
 Then write the Loss function → calculate derivative (gradient descent)
+**Important**
+This is call odd function: log(p / 1-p)
+This function have transform from (0,1) -> [-∞, +∞].   
+Also this fomula bx = odd_function = log(p / 1-p) can help to undestand relationship between x and odd_value (like [Linear Regression](../linear_regression/))
 
-Some value idea
 
-1. Handle missing data
-    
-    When check profile data, there some missing values, if dropna → drop too much value
-    
-    So need to fill in that missing values:
-    
-    - When fill 0: when the missing mean no, example Amt_transaction: missing mean no transaction
-    - When fill mean: when the column data is near normal-distribution
-    - When fill median: when the column data is skew
-
-1. Transform columnsL sin cos to datetime values
-    
-    When dealing with date data, can have the sin/cos values based on date format
-    
-2. Permutation importance
-    
-    In docs in library code:
-    
-    ```python
-        The :term:`estimator` is required to be a fitted estimator. `X` can be the
-        data set used to train the estimator or a hold-out set. The permutation
-        importance of a feature is calculated as follows. First, a baseline metric,
-        defined by :term:`scoring`, is evaluated on a (potentially different)
-        dataset defined by the `X`. Next, a feature column from the validation set
-        is permuted and the metric is evaluated again. The permutation importance
-        is defined to be the difference between the baseline metric and metric from
-        permutating the feature column.
-    
-        Read more in the :ref:`User Guide <permutation_importance>`.
-    ```
-    
-
-1. Shap values
-
-Code from scratch
+## Code from scratch
 
 ```python
 def predict(x, alpha, beta):
@@ -115,3 +98,41 @@ y_pred_all = [predict(xi, alpha, beta) for xi in x]
 y_pred_all
     
 ```
+
+
+
+## Some value idea
+
+1. Handle missing data
+    
+    When check profile data, there some missing values, if dropna → drop too much value
+    
+    So need to fill in that missing values:
+    
+    - When fill 0: when the missing mean no, example Amt_transaction: missing mean no transaction
+    - When fill mean: when the column data is near normal-distribution
+    - When fill median: when the column data is skew
+
+2. Transform columnsL sin cos to datetime values
+    
+    When dealing with date data, can have the sin/cos values based on date format
+    
+3. Permutation importance
+    
+    In docs in library code:
+    
+    ```python
+        The :term:`estimator` is required to be a fitted estimator. `X` can be the
+        data set used to train the estimator or a hold-out set. The permutation
+        importance of a feature is calculated as follows. First, a baseline metric,
+        defined by :term:`scoring`, is evaluated on a (potentially different)
+        dataset defined by the `X`. Next, a feature column from the validation set
+        is permuted and the metric is evaluated again. The permutation importance
+        is defined to be the difference between the baseline metric and metric from
+        permutating the feature column.
+    
+        Read more in the :ref:`User Guide <permutation_importance>`.
+    ```
+    
+4. Shap values
+[Further reading/ blog]

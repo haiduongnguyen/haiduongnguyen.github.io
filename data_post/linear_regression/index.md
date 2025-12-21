@@ -7,41 +7,41 @@ title: Linear Regression
 ## Linear regression
 
 
-
-# Definition
+## Definition
 
 ![image.png](images/1.png)
 
-Linear regression 1 variable
+- Linear regression 1 variable
 
-y = w*x + b
+    y = w*x + b
 
-Linear regression for multiple variable
+- Linear regression for multiple variable
 
-y = w1*x1 + w2*x2 + … + wn*xn + b
+    y = w1*x1 + w2*x2 + … + wn*xn + b
 
-Linear regression with polymonial variable (treat polynorminal as new variable by feature engineering)
+- Linear regression with polymonial variable (treat polynorminal as new variable by feature engineering)
 
-y = w1*x1 + w2*x1^2 + … + b
+    y = w1*x1 + w2*x1^2 + … + b
 
-1. Application
+## Application
 
 Use linear regression in :
 
 - Predict continuous output: house price, stock, creidt score,…
-- 
-1. Solving
+- Understand relationship: for example when increase interest rate -> total saving of book increase?
 
-2 ways to solve linear regression:
+## Solving
+
+When we have data of y and x, and need to understand relationship between them (y dependent on x), and use that for predict future data.  So we have 2 ways to solve linear regression:
 
 - Gradient descent
 - Matrix
 
-Detail solution:
+**Detail solution:**
 
-- Gradient descent
+**- Gradient descent**
 
- Step 1: Init w & b
+**Step 1: Init w & b**
 
 ```python
 # khoi tao w
@@ -60,7 +60,7 @@ w_history = []
 b_history = []
 ```
 
-Step 2: write mse calculation
+**Step 2: write mse calculation**
 
 ```
 def calculate_mse(y_pred, y):
@@ -71,7 +71,7 @@ def calculate_mse(y_pred, y):
     return mse
 ```
 
-Step 3: write gradient descent calculation
+**Step 3: write gradient descent calculation**
 
 ```python
 def grad_y_by_w(w, b, x, y):
@@ -88,7 +88,7 @@ def grad_y_by_b(w, b, x, y):
 
 ```
 
-Step 6: Loop calculate w and b by gradient descent 
+**Step 4: Loop calculate w and b by gradient descent**
 
 ```python
 for epoch in range(30):
@@ -124,9 +124,7 @@ for epoch in range(30):
     
 ```
 
-Step 7:
-
-Compare to SGD function from sklearn
+**Step 5: Compare to SGD function from sklearn**
 
 ```python
 import numpy as np
@@ -146,7 +144,7 @@ print("SGDRegressor coef:", sgd.coef_, "intercept:", sgd.intercept_)
 
 ```
 
-- Matrix
+**- Matrix**
 
 ![image.png](images/2.png)
 
@@ -219,7 +217,11 @@ for n, d in sizes:
 
 ```
 
-1. Linear regression assumption
+## Linear regression assumption
+
+(vì phần này khó nên viết tiếng việt cho dễ hiểu)
+
+**Bảng tổng hợp các giả thuyết**
 
 | Giả thuyết | Cách kiểm định | Công cụ |
 | --- | --- | --- |
@@ -229,7 +231,8 @@ for n, d in sizes:
 | Phân phối chuẩn | Kiểm định Shapiro-Wilk hoặc vẽ histogram + Q-Q plot | shapiro(), qqplot() |
 | Không đa cộng tuyến | Tính VIF (Variance Inflation Factor) | variance_inflation_factor() |
 
-Phần dư residual (resid) cần tuân theo phân phôtis chuẩn, có phương sai không đổi 
+
+**Phần dư residual (resid) cần tuân theo phân phôtis chuẩn, có phương sai không đổi**
 
 Để kiểm chứng thường sẽ chạy Shapiro-wilk để tính ra p-value 
 
@@ -239,7 +242,7 @@ p-value < 0.05 → Bác bỏ H0
 
 Tuy nhiên nếu mẫu lớn → Shapiro thường cho ra p-value < 0.05 nên sẽ cần thêm vẽ biểu đồ trực quan ra
 
-Biểu đồ Q-Q
+**Biểu đồ Q-Q**
 
 ```python
 import statsmodels.api as sm
@@ -261,7 +264,7 @@ plt.show()
 
 ```
 
-Kiểm định đa cộng tuyến:
+**Kiểm định đa cộng tuyến:**
 
 Sử dụng hàm variance_inflation_factor: https://en.wikipedia.org/wiki/Variance_inflation_factor
 
@@ -285,6 +288,7 @@ print(vif_data)
 ```
 
 ![image.png](images/4.png)
+
 
 1. Xử lí khi bị các vấn đề 
 
