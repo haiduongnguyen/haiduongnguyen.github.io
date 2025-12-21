@@ -6,4 +6,5 @@
 
 ## Pages
 
-- [Linear Regression](/data_post/linear_regression/linear_regression.html)
+- [Linear Regression](/data_post/linear_regression/)
+- [Logistic Regression](/data_post/logistic_regression/)
