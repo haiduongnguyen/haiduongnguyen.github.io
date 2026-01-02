@@ -8,3 +8,5 @@
 
 - [Linear Regression](/data_post/linear_regression/)
 - [Logistic Regression](/data_post/logistic_regression/)
+- [Decision Tree](/data_post/decision_tree/)
+- [T-test](/data_post/t-test/)

@@ -1,6 +1,6 @@
 # Hai Duong Nguyen
 
-**Data Analyst in Banking | Machine Learning | Time Series**
+**Data Analyst in Banking** | **Machine Learning** | **Time Series**
 
 I work with customer and transaction data to build data-driven solutions,
 including segmentation, forecasting, and anomaly detection.

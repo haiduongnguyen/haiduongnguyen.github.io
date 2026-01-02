@@ -1,5 +1,5 @@
 ---
-title: Linear Regression
+title: Logistic Regression
 ---
 
 🔙 [Back to Home](/)
@@ -42,7 +42,7 @@ When plot the values of x, y  → think out of sigmoid function f(x) = 1 / (1 + 
 
 Then process bx = log(p / 1-p)
 
-Then write the Loss function → calculate derivative (gradient descent)
+Then write the Loss function → calculate derivative (gradient descent)    
 **Important**
 This is call odd function: log(p / 1-p)
 This function have transform from (0,1) -> [-∞, +∞].   
