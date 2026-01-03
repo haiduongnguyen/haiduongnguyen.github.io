@@ -10,3 +10,4 @@
 - [Logistic Regression](/data_post/logistic_regression/)
 - [Decision Tree](/data_post/decision_tree/)
 - [T-test](/data_post/t-test/)
+- [Mann-whitney u Test](/data_post/mann-whitney-u-test)
