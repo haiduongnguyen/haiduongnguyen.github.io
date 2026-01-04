@@ -26,6 +26,7 @@ including segmentation, forecasting, and anomaly detection.
 ## ✍️ Writing
 - [My first post](./first-post.html)
 - [Data](./data_post/data_landing_page.md)
+- [Anomaly detection](./anomaly_detection/landing_page.md)
 
 
 ---
