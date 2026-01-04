@@ -11,3 +11,6 @@
 - [Decision Tree](/data_post/decision_tree/)
 - [T-test](/data_post/t-test/)
 - [Mann-whitney u Test](/data_post/mann-whitney-u-test)
+
+- [Isolation forest](/anomaly_detection/isolation_forest/)
+
