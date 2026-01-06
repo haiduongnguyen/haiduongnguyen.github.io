@@ -7,4 +7,4 @@
 ## Pages
 
 - [Isolation forest](/anomaly_detection/isolation_forest/)
-
+- [Local Outlier Factor](/anomaly_detection/local_base_outlier_identify)
