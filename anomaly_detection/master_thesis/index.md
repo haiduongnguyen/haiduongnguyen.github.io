@@ -1,3 +1,11 @@
+## Anomaly detection
+
+**My master thesis is "Method of applied different algorithms on multidimension data"**
+
+🔙 [Back to Home](/)
+
+## Story
+
 Here is the part that I records my journey where I build this project.  
 I choose new plan for this project - for me it will be way of working in future: do by ChatGPT guide.  
 But I must note some key point of this:  
