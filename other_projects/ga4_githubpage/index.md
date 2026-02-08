@@ -1,17 +1,19 @@
-Date: 2026-01-26
-
-Link reference: https://support.google.com/analytics/answer/10089681?hl=vi&ref_topic=14089939&sjid=5418224013262677673-NC
-
-1. Introduction
-
-Kể từ **ngày 1 tháng 7 năm 2023**, các tài sản Universal Analytics chuẩn đã ngừng xử lý dữ liệu. Bạn sẽ có thể xem báo cáo Universal Analytics trong một khoảng thời gian sau ngày 1 tháng 7 năm 2023. 
 ---
-title: T - test
+title: GA4 - Google Analytics 4
 ---
 
 🔙 [Back to Home](/)
 
-## Overall about GA4
+## Introduction
+
+Date: 2026-01-26
+Link reference: https://support.google.com/analytics/answer/10089681?hl=vi&ref_topic=14089939&sjid=5418224013262677673-NC
+
+Since July 1, 2023, Universal Analytics has stopped processing new data, making GA4 the default choice for Google Analytics users.
+
+GA4 is not a simple upgrade. It changes how user behavior is measured, which can be confusing for those familiar with UA.
+
+This post is a short introduction to GA4 and the starting point of a series documenting how I learn and use it in practice.
 
 1. Course learn to use GA4 
 
@@ -25,45 +27,27 @@ engagement: what content users engage with and share with others
 
 monetization & retention: how many user become customers and how often they return website
 
+2. What changed from Universal Analytics to GA4?
 
-## Set up
+The key change is simple: GA4 measures events, not sessions.
 
-1. Create account of google analytics
+Universal Analytics was built around sessions and pageviews.
+GA4 treats every user interaction — page views, clicks, scrolls, conversions — as an event.
 
-2. Set up new website tracking projects
+This shift allows GA4 to better track user behavior across devices and platforms, but it also means most UA metrics and reports no longer apply.
 
-3. Add this block code to html file   
+Understanding this mindset change is more important than learning any specific GA4 report.
 
-```
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-xxxxxxx"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-xxxxxxx');
-</script>
-```
+3. What is GA4, at a high level?
 
-4. Test connect
+GA4 is an event-based analytics system designed to track how users interact across websites and apps.
 
-5. Production
+Instead of focusing on pageviews and sessions, GA4 focuses on user actions and their journey over time. This makes it more flexible for modern products, where users move across devices, platforms, and touchpoints.
 
-## Default reports of GA4
+Think of GA4 less as a reporting tool, and more as a behavior tracking framework.
 
-- Number cus & Number events :  
 
-![alt text](images/2.png)
+4. Setup GA4
+GA4 setup is relatively straightforward: create a property, add the tracking tag, and verify data collection.
 
-- Users by country/ pages view/ channel   
-
-![alt text](images/3.png)
-
-- Reports built in
-
-![alt text](images/4.png)
-
-## Customer reports
-
-<To be continue>   
-Will be updated if this blog has more users access :>   
+I won’t cover the setup steps in detail here, since this post focuses on how GA4 works conceptually. A dedicated setup guide will follow in a separate post. [Setup guide](./setup.md)

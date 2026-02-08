@@ -17,7 +17,7 @@ We can leverage this info to some use case:
 - Credit card: seasonal spike → campaign timing
 
 
-## Some barrier 
+## Some challenges 
 
 Identifying school fee transactions from banking data is not straightforward.
   
