@@ -1,66 +1,140 @@
 ---
-title: T - test
+title: T-Test
 ---
 
 🔙 [Back to Home](/)
 
-## T - test
+## I. What is a T-test?
 
-Link tham khao: https://www.cuemath.com/t-test-formula/ 
+A **T-test** is a type of inferential statistic used to determine if there is a significant difference between the means of two groups, which may be related in certain features. It is heavily used in hypothesis testing to assess whether a process or treatment actually had an effect on the population of interest.
 
-## I. Type of T-test
+To put it simply, a T-test helps us answer: *"Are these two groups really different, or is the difference we see just due to random chance?"*
 
-1. One-sample t-test
+**Key Terms:**
+- **Null Hypothesis ($H_0$):** Assumes there is no significant difference between the populations.
+- **Alternative Hypothesis ($H_1$):** Assumes there is a significant difference.
+- **t-value:** The calculated difference represented in units of standard error. The larger the absolute t-value, the stronger the evidence against the null hypothesis.
+- **p-value:** The probability that the results from your sample data occurred by chance. If $p < \alpha$ (usually chosen as $0.05$), we reject the null hypothesis.
 
-For comparing the mean of a population ¯x from n samples, with a specified theoretical mean μ, we use a one-sample t-test.
+---
 
-1. Independent sample T-test 
+## II. Assumptions of T-test
 
-Students t-test is used to compare the mean of two groups of samples.
+Before applying a T-test, your data must satisfy these assumptions. If they fail, you should consider using non-parametric alternative tests.
 
-It helps evaluate if the means of the two sets of data are statistically significantly different from each other. 
+1. **Continuous Data:** The target variable should be measured on a continuous or ordinal scale.
+2. **Random Sample:** Data should be collected from a representative, randomly selected portion of the total population.
+3. **Normal Distribution:** The data should approximately follow a normal (Gaussian) distribution. (Can be checked via Shapiro-Wilk test or Q-Q plots).
+4. **Homogeneity of Variance:** (Specifically for Independent T-test) The variances of the 2 groups should be approximately equal. If they are not equal, we must use a variant called **Welch's T-test**.
 
-1. Paired T-test
-- A paired samples t-test and an independent samples t-test are both used to compare means, but they differ in how the data is collected and related.
-- A paired t-test compares the means of two related groups, often from the same subjects measured at different times or under different conditions. An independent t-test compares the means of two unrelated groups.
+---
 
-## II. How T-test are used
+## III. Three Main Types of T-test 
 
-1. Hypothesis testing 
+There are three main types of T-tests depending on the structure of your data and what you want to compare:
 
-2. Significance
+### 1. One-Sample T-test
+Used to compare the mean of a single group against a known mean (a theoretical mean, or a population mean).
 
-If the calculated t-value exceeds the critical value (based on the chosen significance level and degrees of freedom), the null hypothesis is rejected, suggesting a statistically significant difference
+- **Formula:** 
+  $$ t = \frac{\bar{x} - \mu}{s / \sqrt{n}} $$
+  *(Where $\bar{x}$ = sample mean, $\mu$ = population mean, $s$ = sample standard deviation, $n$ = sample size)*
 
-3. Interpreting T-value
-- A larger absolute t-value suggests a greater difference between the sample means
-- The larger the t-value (the further away from zero), the stronger the evidence against the null hypothesis
-- The sign of the t-value (+ or -) indicates the direction of the difference between the means
+- **Example:** A teacher has a class of 30 students. The teacher wants to statistically test if the average height of students in this class is significantly different from $170\text{ cm}$.
 
-## III. Example
+### 2. Independent Two-Sample T-test (Unpaired)
+Used to compare the means of **two independent groups** to determine whether there is statistical evidence that the associated population means are significantly different.
+
+- **Formula (Assuming Equal Variances):**
+  $$ t = \frac{\bar{x}_1 - \bar{x}_2}{s_p \sqrt{\frac{1}{n_1} + \frac{1}{n_2}}} $$
+  *(Where $s_p$ is the pooled standard deviation)*
+
+- **Example:** A teacher wants to test if there is a significant height difference between Class A and Class B.
+
+### 3. Paired Sample T-test
+Used to compare the means of two **related groups**. Often used for "before and after" studies on the *exact same* subjects.
+
+- **Formula:**
+  $$ t = \frac{\bar{d}}{s_d / \sqrt{n}} $$
+  *(Where $\bar{d}$ = mean difference between the paired observations, $s_d$ = standard deviation of the differences)*
+
+- **Example:** Measuring the weight of 20 patients *before* and *after* an 8-week diet plan.
+
+---
+
+## IV. Python Implementation (Examples & Code)
+
+In Python, we can easily perform all types of T-tests using the `scipy.stats` library.
+
+```python
+import numpy as np
+from scipy import stats
+
+# Set random seed to generate reproducible dummy data
+np.random.seed(42)
+
+# ==========================================
+# 1. One-Sample T-test
+# ==========================================
+print("--- 1. One-Sample T-test ---")
+
+# Hypothesis: Is the sample mean significantly different from 170?
+sample_heights = np.random.normal(loc=172, scale=5, size=30)
+theoretical_mean = 170
+
+t_stat, p_value = stats.ttest_1samp(sample_heights, theoretical_mean)
+
+print(f"T-statistic: {t_stat:.4f}, p-value: {p_value:.4f}")
+if p_value < 0.05:
+    print("=> Reject Null Hypothesis: The mean is significantly different from 170.\n")
+else:
+    print("=> Fail to Reject Null Hypothesis: No significant difference.\n")
 
 
-A class has 30 students, with height [165, 170, ...]
-Teacher want to test if average height of students is 170 or not
+# ==========================================
+# 2. Independent Two-Sample T-test
+# ==========================================
+print("--- 2. Independent Two-Sample T-test ---")
 
---> Use T-test 1 sample in this 
-1. T-test 1 sample
+# Hypothesis: Are the means of Class A and Class B different?
+class_a_heights = np.random.normal(loc=168, scale=5, size=30)
+class_b_heights = np.random.normal(loc=175, scale=6, size=35)
 
-![alt text]({905C5678-8E5A-4076-961A-30E49F66B605}.png)
+# By default, ttest_ind assumes equal population variances.
+# Because standard deviations are 5 and 6 (slightly different), we use Welch's t-test by setting equal_var=False
+t_stat, p_value = stats.ttest_ind(class_a_heights, class_b_heights, equal_var=False)
 
-![alt text]({96AA36FA-376A-4222-8278-C0C8A3B89B10}.png)
-
-![alt text]({AEEFC847-A625-43A8-825A-96377A6C0BBA}.png)
-
-![alt text]({E5D901D6-82C4-4C9D-A1D4-40EA8C55B70B}.png)
-
-![alt text]({CAF72122-0797-4FC7-92A8-E5AC42E0B05E}.png)
-
-![alt text]({FBB42733-BBC5-468B-8357-BF863634B613}.png)
+print(f"T-statistic: {t_stat:.4f}, p-value: {p_value:.4f}")
+if p_value < 0.05:
+    print("=> Reject Null Hypothesis: There is a significant difference between Class A and Class B.\n")
+else:
+    print("=> Fail to Reject Null Hypothesis: No significant difference.\n")
 
 
-2. T-test 2 sample
+# ==========================================
+# 3. Paired Sample T-test
+# ==========================================
+print("--- 3. Paired Sample T-test ---")
 
-Have 2 class, the teacher want to test if any different in height between these 2 class.
+# Hypothesis: Is there a significant difference in weight before and after the diet?
+weight_before = np.random.normal(loc=85, scale=10, size=20)
 
-![alt text]({5FFBC954-41A8-4122-A5CE-E91790CCC9DA}.png)
+# Assume the diet causes an average weight loss of 3kg per person
+weight_after = weight_before - np.random.normal(loc=3, scale=2, size=20) 
+
+t_stat, p_value = stats.ttest_rel(weight_before, weight_after)
+
+print(f"T-statistic: {t_stat:.4f}, p-value: {p_value:.4f}")
+if p_value < 0.05:
+    print("=> Reject Null Hypothesis: The weight before and after the diet are significantly different.\n")
+else:
+    print("=> Fail to Reject Null Hypothesis: No significant difference.\n")
+```
+
+## V. Summary
+
+- Always check your **p-value threshold** (commonly $\alpha = 0.05$).
+- Always verify data **assumptions** (Normality, Homogeneity) are met before running the test.
+- Use **One-sample** when you have 1 group and a known theoretical value.
+- Use **Two-sample (Independent)** when you have 2 different groups.
+- Use **Paired** when you measure the same group twice (e.g., before/after).
