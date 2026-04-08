@@ -19,7 +19,7 @@ title: Linear Regression
 
     y = w1*x1 + w2*x2 + … + wn*xn + b
 
-- Linear regression with polymonial variable (treat polynorminal as new variable by feature engineering)
+- Linear regression with polynomial variable (treat polynomial as new variable by feature engineering)
 
     y = w1*x1 + w2*x1^2 + … + b
 
@@ -27,12 +27,12 @@ title: Linear Regression
 
 Use linear regression in :
 
-- Predict continuous output: house price, stock, creidt score,…
-- Understand relationship: for example when increase interest rate -> total saving of book increase?
+- Predict continuous output: house price, stock, credit score,…
+- Understand relationship: for example when increasing interest rate -> total saving of book increases?
 
 ## Solving
 
-When we have data of y and x, and need to understand relationship between them (y dependent on x), and use that for predict future data.  So we have 2 ways to solve linear regression:
+When we have data of y and x, and need to understand relationship between them (y dependent on x), and use that for predicting future data.  So we have 2 ways to solve linear regression:
 
 - Gradient descent
 - Matrix
@@ -93,7 +93,7 @@ def grad_y_by_b(w, b, x, y):
 ```python
 for epoch in range(30):
     print("================================")
-    print(f"Run for epach {epoch}")
+    print(f"Run for epoch {epoch}")
     
     if epoch == 0:
         w = w_init
@@ -217,7 +217,7 @@ for n, d in sizes:
 
 ```
 
-## Linear regression assumption
+## Linear regression assumptions
 
 (vì phần này khó nên viết tiếng việt cho dễ hiểu)
 
@@ -232,7 +232,7 @@ for n, d in sizes:
 | Không đa cộng tuyến | Tính VIF (Variance Inflation Factor) | variance_inflation_factor() |
 
 
-**Phần dư residual (resid) cần tuân theo phân phôtis chuẩn, có phương sai không đổi**
+**Phần dư residual (resid) cần tuân theo phân phối chuẩn, có phương sai không đổi**
 
 Để kiểm chứng thường sẽ chạy Shapiro-wilk để tính ra p-value 
 
@@ -312,7 +312,7 @@ A: n x n
 
 v: n x 1 
 
-λ: 1 so float 
+λ: 1 số thực (float) 
 
 Av=λv
 
@@ -357,7 +357,7 @@ Chọn top các hàng mà vẫn giữ được nhiều thông tin nhất
 
 → Giảm được số chiều dữ liệu từ m → k 
 
-Cách 3: Sử dụng Regulation Lasso và Ridge
+Cách 3: Sử dụng Regularization Lasso và Ridge
 
 ![image.png](images/7.png)
 
