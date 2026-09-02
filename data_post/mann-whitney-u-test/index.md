@@ -1,4 +1,4 @@
----
+﻿---
 title: Mann–Whitney U Test
 title_vi: Mann–Whitney U test và cách diễn giải
 title_en: Mann–Whitney U test and interpretation
@@ -9,46 +9,8 @@ date: 2026-04-08
 writing_topic: statistics
 ---
 
-<section class="reading-page original-source" data-original-source="true" data-lang="en">
-
-<div class="callout original-source__note">
-<p><strong>Original article preserved in full.</strong> The editorial section that follows adds clarification without replacing the original text, code, or images.</p>
-</div>
-
-{% capture original_article_content %}
-
-🔙 [Back to Home](/)
-
-## Mann-whitney U Test
-
-## Definition
-
-The t-test ([T-test](/data_post/t-test/)) is commonly used to test whether the means of two groups are equal. It assumes that the data are approximately normally distributed (or that the sample size is large enough for the Central Limit Theorem to apply).
-
-The Mann–Whitney U test does not require the normality assumption. It is a non-parametric test that works by ranking the data values rather than using the raw data. Instead of testing for equality of means, it tests whether the distributions of the two groups differ in location (often interpreted as a difference in medians).  
-
-So the output of Mann-white U test is test: The two distributions have the same shape and spread
-
-1. Use case
-
-### **Hypotheses in the Mann-Whitney U Test**
-
-- [**Null Hypothesis (H₀):**](https://www.geeksforgeeks.org/null-hypothesis/) The two populations are equal; there is no significant difference between them.
-- [**Alternative Hypothesis (H₁):**](https://www.geeksforgeeks.org/alternative-hypothesis-definition-types-and-examples/) The two populations are not equal; at least one group has significantly different values.
-
-1. Fomula
-- The U statistic is calculated for both groups:
-    - `U1 = n1 * n2 + (n1 * (n1 + 1)) / 2 - R1`.
-    - `U2 = n1 * n2 + (n2 * (n2 + 1)) / 2 - R2`.
-- The smaller of `U1` and `U2` is the test statistic, often denoted as `U`.
-- If **U ≤ U₀** ([**critical value**](https://www.geeksforgeeks.org/critical-value/)), reject the null hypothesis.
-- Otherwise, do not reject the null hypothesis.
-{% endcapture %}
-
-{{ original_article_content | markdownify }}
-</section>
 <article class="reading-page" data-lang="vi">
-  <header class="page-intro"><p class="eyebrow">Learning note · Statistics</p><h1>Mann–Whitney U test</h1><p>Một kiểm định phi tham số cho hai mẫu độc lập, dựa trên thứ hạng thay vì trực tiếp dùng giá trị gốc.</p></header>
+  <header class="page-intro"><h1>Mann–Whitney U test</h1><p>Một kiểm định phi tham số cho hai mẫu độc lập, dựa trên thứ hạng thay vì trực tiếp dùng giá trị gốc.</p></header>
   <h2>Kiểm định trả lời câu hỏi gì?</h2><p>Giả thuyết không tổng quát là hai phân phối giống nhau. Có thể hiểu statistic thông qua xác suất một quan sát ngẫu nhiên từ nhóm X lớn hơn một quan sát từ nhóm Y, có xử lý tie.</p>
   <div class="callout"><p><strong>Không nên mặc định nói đây là “kiểm định median”.</strong> Chỉ khi hai phân phối có hình dạng và độ phân tán tương tự, khác biệt mới có thể được diễn giải chủ yếu như location/median shift.</p></div>
   <h2>Assumptions</h2><ul><li>Hai nhóm độc lập.</li><li>Quan sát trong mỗi nhóm độc lập.</li><li>Biến đo ít nhất ở thang ordinal.</li><li>Nếu muốn diễn giải median shift, hình dạng phân phối cần tương tự.</li></ul>
@@ -57,7 +19,7 @@ So the output of Mann-white U test is test: The two distributions have the same 
 result = mannwhitneyu(group_a, group_b, alternative="two-sided")
 print(result.statistic, result.pvalue)</code></pre>
   <p>Khi báo cáo, nên kèm sample size, U statistic, p-value, effect size và mô tả phân phối. “Không reject H0” không có nghĩa là chứng minh hai nhóm giống nhau.</p>
-  <h2>Hiệu chỉnh và mở rộng từ ghi chép gốc</h2>
+  <h2>Effect size, exact inference và lựa chọn kiểm định</h2>
   <h3>U đo thứ tự cặp quan sát</h3><p>Sau khi xử lý tie, U liên hệ với xác suất một quan sát ngẫu nhiên của nhóm A lớn hơn một quan sát của nhóm B. Điều này giúp effect size dễ hiểu hơn, nhưng không tự động xác định khác biệt đến từ median, spread hay shape.</p>
   <pre><code class="language-python">import numpy as np
 
@@ -84,7 +46,7 @@ def mann_whitney_u_and_rank_biserial(group_a, group_b):
 </article>
 
 <article class="reading-page" data-lang="en">
-  <header class="page-intro"><p class="eyebrow">Learning note · Statistics</p><h1>Mann–Whitney U test</h1><p>A non-parametric test for two independent samples that works with ranks rather than raw values.</p></header>
+  <header class="page-intro"><h1>Mann–Whitney U test</h1><p>A non-parametric test for two independent samples that works with ranks rather than raw values.</p></header>
   <h2>What question does it answer?</h2><p>The general null hypothesis is that the two distributions are the same. The statistic can also be understood through the probability that a random observation from X exceeds one from Y, with ties handled appropriately.</p>
   <div class="callout"><p><strong>Do not automatically call it a “test of medians.”</strong> A location or median-shift interpretation needs similarly shaped distributions with comparable spread.</p></div>
   <h2>Assumptions</h2><ul><li>The two groups are independent.</li><li>Observations within each group are independent.</li><li>The outcome is at least ordinal.</li><li>A median-shift interpretation requires similarly shaped distributions.</li></ul>
@@ -93,7 +55,7 @@ def mann_whitney_u_and_rank_biserial(group_a, group_b):
 result = mannwhitneyu(group_a, group_b, alternative="two-sided")
 print(result.statistic, result.pvalue)</code></pre>
   <p>Report sample sizes, the U statistic, p-value, an effect size, and distribution summaries. Failing to reject the null does not prove that the groups are identical.</p>
-  <h2>Corrections and extensions to the original notes</h2>
+  <h2>Effect size, exact inference, and test selection</h2>
   <h3>U measures pairwise ordering</h3><p>After accounting for ties, U is related to the probability that a random observation from group A exceeds one from group B. That gives an interpretable effect size, but it does not identify whether a difference comes from the median, spread, or distribution shape.</p>
   <pre><code class="language-python">import numpy as np
 

@@ -1,35 +1,15 @@
----
+﻿---
 title: Data and Machine Learning Notes
 title_vi: Ghi chép Data và Machine Learning
 title_en: Data and machine-learning notes
-description: Curated notes on predictive modeling, clustering, and statistical tests.
-description_vi: Ghi chép có chọn lọc về mô hình dự báo, phân cụm và kiểm định thống kê.
-description_en: Curated notes on predictive modeling, clustering, and statistical tests.
+description: OLS, logistic regression, decision trees, K-means, t-tests, and Mann–Whitney U with assumptions and evaluation criteria.
+description_vi: OLS, logistic regression, decision tree, K-means, t-test và Mann–Whitney U cùng assumptions và tiêu chí đánh giá.
+description_en: OLS, logistic regression, decision trees, K-means, t-tests, and Mann–Whitney U with assumptions and evaluation criteria.
 permalink: /data_post/data_landing_page.html
 ---
 
-<details class="original-archive" data-original-source="true" data-lang="en">
-<summary>Original page notes (preserved in full)</summary>
-{% capture original_page_content %}
-## Data Scientist
-
-**This contains some contents related to algorithms, use case and my experiences**
-
-🔙 [Back to Home](/)
-
-## Pages
-
-- [Linear Regression](/data_post/linear_regression/)
-- [Logistic Regression](/data_post/logistic_regression/)
-- [Decision Tree](/data_post/decision_tree/)
-- [T-test](/data_post/t-test/)
-- [Mann-whitney u Test](/data_post/mann-whitney-u-test)
-- [Kmeans](/data_post/kmeans)
-{% endcapture %}
-<div>{{ original_page_content | markdownify }}</div>
-</details>
-<section class="page-intro" data-lang="vi"><p class="eyebrow">Learning notes</p><h1>Data và Machine Learning</h1><p>Các bài viết bắt đầu từ trực giác, sau đó đi vào công thức, cách kiểm chứng và những giới hạn dễ bị bỏ qua.</p></section>
-<section class="page-intro" data-lang="en"><p class="eyebrow">Learning notes</p><h1>Data and machine learning</h1><p>These notes start with intuition, then cover mechanics, validation, and limitations that are easy to overlook.</p></section>
+<section class="page-intro" data-lang="vi"><h1>Data và Machine Learning</h1></section>
+<section class="page-intro" data-lang="en"><h1>Data and machine learning</h1></section>
 
 <div class="card-grid card-grid--two">
   <article class="card"><h2>Linear Regression</h2><p data-lang="vi">OLS, gradient descent, assumptions và multicollinearity.</p><p data-lang="en">OLS, gradient descent, assumptions, and multicollinearity.</p><a class="card__link" href="/data_post/linear_regression/">Read →</a></article>
@@ -39,4 +19,3 @@ permalink: /data_post/data_landing_page.html
   <article class="card"><h2>T-test</h2><p data-lang="vi">Ba dạng t-test, assumptions và ví dụ Python.</p><p data-lang="en">Three t-test variants, assumptions, and Python examples.</p><a class="card__link" href="/data_post/t-test/">Read →</a></article>
   <article class="card"><h2>Mann–Whitney U</h2><p data-lang="vi">Kiểm định phi tham số và cách diễn giải đúng.</p><p data-lang="en">A non-parametric test and how to interpret it correctly.</p><a class="card__link" href="/data_post/mann-whitney-u-test/">Read →</a></article>
 </div>
-

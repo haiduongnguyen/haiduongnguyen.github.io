@@ -2,14 +2,14 @@
 title: Projects
 title_vi: Dự án dữ liệu
 title_en: Data projects
-description: Selected projects in banking analytics, time series, and anomaly detection.
-description_vi: Các dự án tiêu biểu về dữ liệu ngân hàng, time series và phát hiện bất thường.
-description_en: Selected projects in banking analytics, time series, and anomaly detection.
+description: Banking transaction entity matching and multidimensional anomaly detection using time-series and unsupervised methods.
+description_vi: Entity matching cho giao dịch ngân hàng và anomaly detection đa chiều bằng time series cùng phương pháp không giám sát.
+description_en: Banking transaction entity matching and multidimensional anomaly detection using time-series and unsupervised methods.
 permalink: /projects/
 ---
 
-<section class="page-intro" data-lang="vi"><p class="eyebrow">Portfolio</p><h1>Dự án dữ liệu</h1><p>Các case study dưới đây tập trung vào quá trình suy nghĩ và đánh đổi. Vì bảo mật, ví dụ được tổng hợp, ẩn danh hoặc tạo giả lập.</p></section>
-<section class="page-intro" data-lang="en"><p class="eyebrow">Portfolio</p><h1>Data projects</h1><p>These case studies focus on reasoning and trade-offs. Examples are aggregated, anonymized, or synthetic to protect confidential information.</p></section>
+<section class="page-intro" data-lang="vi"><h1>Dự án dữ liệu</h1><p>Các ví dụ dùng dữ liệu tổng hợp, ẩn danh hoặc giả lập; không chứa hồ sơ khách hàng bí mật.</p></section>
+<section class="page-intro" data-lang="en"><h1>Data projects</h1><p>Examples use aggregated, anonymized, or synthetic data and contain no confidential customer records.</p></section>
 
 <div class="card-grid card-grid--two">
   <article class="card">
@@ -19,8 +19,7 @@ permalink: /projects/
   </article>
   <article class="card">
     <ul class="badge-list"><li class="badge">Observability</li><li class="badge">Unsupervised ML</li><li class="badge">Research</li></ul>
-    <div data-lang="vi"><h2>Phát hiện bất thường từ logs và metrics</h2><p>Hành trình luận văn về cách định nghĩa anomaly, thiết kế pipeline và đánh giá trên dữ liệu vận hành đa chiều.</p><a class="card__link" href="/anomaly_detection/landing_page.html">Xem dự án →</a></div>
-    <div data-lang="en"><h2>Anomaly detection for logs and metrics</h2><p>A thesis journey covering anomaly definitions, pipeline design, and evaluation on multidimensional operational data.</p><a class="card__link" href="/anomaly_detection/landing_page.html">View the project →</a></div>
+    <div data-lang="vi"><h2>Phát hiện bất thường từ logs và metrics</h2><p>Luận văn định nghĩa anomaly unit, so sánh rule baseline với mô hình không giám sát và đánh giá precision/recall theo event, detection delay cùng alert volume.</p><a class="card__link" href="/anomaly_detection/landing_page.html">Đọc ghi chép nghiên cứu →</a></div>
+    <div data-lang="en"><h2>Anomaly detection for logs and metrics</h2><p>The thesis defines the anomaly unit, compares rule baselines with unsupervised models, and evaluates event precision/recall, detection delay, and alert volume.</p><a class="card__link" href="/anomaly_detection/landing_page.html">Read the research notes →</a></div>
   </article>
 </div>
-

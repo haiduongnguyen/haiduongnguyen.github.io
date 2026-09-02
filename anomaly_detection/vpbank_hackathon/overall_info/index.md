@@ -1,4 +1,4 @@
----
+﻿---
 title: Synthetic Logs and Metrics Dataset
 title_vi: Dữ liệu logs và metrics giả lập
 title_en: Synthetic logs and metrics dataset
@@ -9,109 +9,13 @@ date: 2026-02-02
 permalink: /anomaly_detection/vpbank_hackathon/overall_info/
 ---
 
-<section class="reading-page original-source" data-original-source="true" data-lang="en">
-
-<div class="callout original-source__note">
-<p><strong>Original article preserved in full.</strong> The editorial section that follows adds clarification without replacing the original text, code, or images.</p>
-</div>
-
-{% capture original_article_content %}
-# Logs and Metrics data 
-
-## Overview
-
-Reference: 
-
-https://www.splunk.com/en_us/blog/learn/log-data.html
-
-Logs data: 
-
-**Log data consists** of time-stamped, automatically generated records from applications, servers, and network devices, providing a detailed, chronological view of system activity and user behavior.
-
-With this data, IT professionals are able to:
-
-- Debug and troubleshoot issues
-- Track progress and results
-- [Monitor performance](https://www.splunk.com/en_us/blog/learn/it-monitoring.html)
-- Gain valuable insights to inform decision-making
-- [Audit and analyze security events](https://www.splunk.com/en_us/blog/learn/cybersecurity-analytics.html)
-- Detect patterns or trends
-
-Types of logs data: 
-
-![image.png](attachment:7179cb4e-5c2a-450d-a3db-d5da1d96087d:image.png)
-
-**Using tools for log data analysis**
-
-There are many tools available to help you analyze log data, depending on what type of information you need, your organizational goals, your budget and many other factors. Some go-to solutions include:
-
-- [Splunk](https://www.splunk.com/en_us/blog/learn/what-splunk-does.html)
-- ELK/Elastic Stack
-- Logz.io
-- Graylog
-- Loggly
-
-Metrics 
-
-![image.png](attachment:2b42376c-ed47-438f-9db1-8f20bb520797:image.png)
-
-Dummy logs and metrics data
-
-Use Chat GPT for generate dummy data
-
-### 1) `sample_logs.csv` (1,000 rows)
-
-**Columns**
-
-- `timestamp` (ISO 8601, UTC, ms precision)
-- `level` (`DEBUG|INFO|WARN|ERROR`)
-- `service` (e.g., `auth-service`, `orders`, `inventory`)
-- `host` (e.g., `ip-10-0-12-15`)
-- `region` (`us-east-1`, `us-west-2`, `eu-central-1`, `ap-southeast-1`)
-- `trace_id`, `span_id` (hex)
-- `user_id` (nullable, `user_###`)
-- `client_ip`
-- `http_method` (`GET|POST|PUT|PATCH|DELETE`)
-- `path` (templatized endpoints expanded, e.g., `/api/v1/orders/1234`)
-- `status_code` (common HTTP codes, realistic distribution)
-- `latency_ms` (log-normal skew)
-- `bytes_sent` (log-normal skew)
-- `message` (short description)
-
-### 2) `sample_metrics.csv` (1,000 rows)
-
-**Columns**
-
-- `timestamp` (ISO 8601, UTC, second precision)
-- `metric_name` (e.g., `cpu.utilization`, `memory.usage`, `disk.iops`, `http.requests`, `http.errors`, `queue.depth`)
-- `value` (bounded/typed per metric)
-- `unit` (`%`, `MB`, `ops/s`, `req/s`, `err/s`, `messages`)
-- `service`, `host`, `region`
-- `labels` (compact JSON string, e.g., `{"env":"prod","az":"b","version":"v3.2.1"}`)
-- `aggregation` (`gauge|sum|avg|max|min`)
-- `window_s` (1, 5, 10, 30, 60)
-
-
-Download the sample logs data: [application_logs.jsonl](./application_logs.jsonl)
-
-
-Download the sample logs data: [apm_metrics.jsonl](./apm_metrics.jsonl)
-
-
-Code for generate logs: [generate_logs.py](./generate_logs.py)
-
-Code for generate logs: [generate_metrics.py](./generate_metrics.py)
-{% endcapture %}
-
-{{ original_article_content | markdownify }}
-</section>
 <article class="reading-page" data-lang="vi">
-  <header class="page-intro"><p class="eyebrow">Synthetic data · Observability</p><h1>Logs và metrics giả lập</h1><p>Một bộ dữ liệu nhỏ, không chứa dữ liệu nội bộ, dùng để thử pipeline anomaly detection và kiểm tra cách kết hợp hai loại signal.</p></header>
+  <header class="page-intro"><h1>Logs và metrics giả lập</h1><p>Một bộ dữ liệu nhỏ, không chứa dữ liệu nội bộ, dùng để thử pipeline anomaly detection và kiểm tra cách kết hợp hai loại signal.</p></header>
   <div class="callout"><p><strong>Dữ liệu hoàn toàn giả lập.</strong> Tên service, message, timestamp và metric được tạo bởi script trong repo.</p></div>
   <h2>Hai nguồn signal</h2><ul><li><strong>Application logs:</strong> timestamp, service, severity, message và context của event.</li><li><strong>APM metrics:</strong> latency, request volume, error rate và resource utilization theo thời gian.</li></ul>
   <h2>Tải dữ liệu và code</h2><ul><li><a href="application_logs.jsonl">application_logs.jsonl</a></li><li><a href="apm_metrics.jsonl">apm_metrics.jsonl</a></li><li><a href="generate_logs.py">generate_logs.py</a></li><li><a href="generate_metrics.py">generate_metrics.py</a></li></ul>
   <h2>Cách dùng trong thí nghiệm</h2><ol><li>Chia dữ liệu theo thời gian, không random split.</li><li>Fit preprocessing và baseline trên vùng normal ban đầu.</li><li>Đưa anomaly có kiểm soát vào holdout period.</li><li>Đánh giá detection window, false alert volume và delay.</li><li>Thay đổi seed/severity để kiểm tra độ ổn định.</li></ol><p>Bộ dữ liệu này phù hợp để kiểm tra code và metric. Nó không đại diện đầy đủ cho độ phức tạp của production.</p>
-  <h2>Hiệu chỉnh data contract sau khi kiểm tra file thật</h2><p>Hai artifact hiện tại là JSON Lines và mỗi file có 1.500 record. Logs có các field <code>timestamp, trace_id, span_id, parent_span_id, service, level, path, message, status, latency_ms, is_anomaly</code>. Metrics có <code>timestamp, trace_id, span_id, parent_span_id, service, cpu, memory, latency, throughput, is_anomaly</code>.</p>
+  <h2>Mỗi file có 1.500 record và một schema kiểm tra được</h2><p>Hai artifact hiện tại là JSON Lines và mỗi file có 1.500 record. Logs có các field <code>timestamp, trace_id, span_id, parent_span_id, service, level, path, message, status, latency_ms, is_anomaly</code>. Metrics có <code>timestamp, trace_id, span_id, parent_span_id, service, cpu, memory, latency, throughput, is_anomaly</code>.</p>
   <div class="callout"><p><strong>Giới hạn tái lập hiện tại:</strong> hai generator tham chiếu <code>trace_chain.py</code>, <code>topology.json</code> và hai YAML config chưa có trong repo. JSONL tải xuống vẫn kiểm tra được, nhưng chưa nên nói dataset có thể regenerate chỉ bằng hai script hiện tại.</p></div>
   <h3>Validator cho artifact hiện có</h3><pre><code class="language-python">import json
 from pathlib import Path
@@ -131,12 +35,12 @@ for filename, required in contracts.items():
 </article>
 
 <article class="reading-page" data-lang="en">
-  <header class="page-intro"><p class="eyebrow">Synthetic data · Observability</p><h1>Synthetic logs and metrics</h1><p>A small, non-confidential dataset for testing anomaly-detection pipelines and combining two signal types.</p></header>
+  <header class="page-intro"><h1>Synthetic logs and metrics</h1><p>A small, non-confidential dataset for testing anomaly-detection pipelines and combining two signal types.</p></header>
   <div class="callout"><p><strong>The data is entirely synthetic.</strong> Service names, messages, timestamps, and metrics are generated by scripts in the repository.</p></div>
   <h2>Two signal sources</h2><ul><li><strong>Application logs:</strong> timestamp, service, severity, message, and event context.</li><li><strong>APM metrics:</strong> latency, request volume, error rate, and resource utilization over time.</li></ul>
   <h2>Download data and code</h2><ul><li><a href="application_logs.jsonl">application_logs.jsonl</a></li><li><a href="apm_metrics.jsonl">apm_metrics.jsonl</a></li><li><a href="generate_logs.py">generate_logs.py</a></li><li><a href="generate_metrics.py">generate_metrics.py</a></li></ul>
   <h2>Using it in an experiment</h2><ol><li>Split by time rather than randomly.</li><li>Fit preprocessing and a baseline on an initial normal period.</li><li>Inject controlled anomalies into the holdout period.</li><li>Evaluate detection windows, false-alert volume, and delay.</li><li>Vary seeds and severity to test stability.</li></ol><p>This dataset is suitable for testing code and metrics. It does not reproduce the full complexity of production systems.</p>
-  <h2>Corrected data contract after inspecting the artifacts</h2><p>The current artifacts are JSON Lines files with 1,500 records each. Logs contain <code>timestamp, trace_id, span_id, parent_span_id, service, level, path, message, status, latency_ms, is_anomaly</code>. Metrics contain <code>timestamp, trace_id, span_id, parent_span_id, service, cpu, memory, latency, throughput, is_anomaly</code>.</p>
+  <h2>Each file has 1,500 records and a verifiable schema</h2><p>The current artifacts are JSON Lines files with 1,500 records each. Logs contain <code>timestamp, trace_id, span_id, parent_span_id, service, level, path, message, status, latency_ms, is_anomaly</code>. Metrics contain <code>timestamp, trace_id, span_id, parent_span_id, service, cpu, memory, latency, throughput, is_anomaly</code>.</p>
   <div class="callout"><p><strong>Current reproducibility limit:</strong> both generators import <code>trace_chain.py</code>, <code>topology.json</code>, and two YAML configuration files that are not in this repository. The downloadable JSONL can be validated, but the dataset cannot yet be regenerated from the two published scripts alone.</p></div>
   <h3>Validate the existing artifacts</h3><pre><code class="language-python">import json
 from pathlib import Path
