@@ -1,3 +1,21 @@
+---
+title: Synthetic Logs and Metrics Dataset
+title_vi: Dữ liệu logs và metrics giả lập
+title_en: Synthetic logs and metrics dataset
+description: Reproducible synthetic logs and APM metrics for anomaly-detection experiments.
+description_vi: Bộ logs và APM metrics giả lập có thể tái tạo để thử nghiệm anomaly detection.
+description_en: Reproducible synthetic logs and APM metrics for anomaly-detection experiments.
+date: 2026-02-02
+permalink: /anomaly_detection/vpbank_hackathon/overall_info/
+---
+
+<section class="reading-page original-source" data-original-source="true" data-lang="en">
+
+<div class="callout original-source__note">
+<p><strong>Original article preserved in full.</strong> The editorial section that follows adds clarification without replacing the original text, code, or images.</p>
+</div>
+
+{% capture original_article_content %}
 # Logs and Metrics data 
 
 ## Overview
@@ -83,3 +101,56 @@ Download the sample logs data: [apm_metrics.jsonl](./apm_metrics.jsonl)
 Code for generate logs: [generate_logs.py](./generate_logs.py)
 
 Code for generate logs: [generate_metrics.py](./generate_metrics.py)
+{% endcapture %}
+
+{{ original_article_content | markdownify }}
+</section>
+<article class="reading-page" data-lang="vi">
+  <header class="page-intro"><p class="eyebrow">Synthetic data · Observability</p><h1>Logs và metrics giả lập</h1><p>Một bộ dữ liệu nhỏ, không chứa dữ liệu nội bộ, dùng để thử pipeline anomaly detection và kiểm tra cách kết hợp hai loại signal.</p></header>
+  <div class="callout"><p><strong>Dữ liệu hoàn toàn giả lập.</strong> Tên service, message, timestamp và metric được tạo bởi script trong repo.</p></div>
+  <h2>Hai nguồn signal</h2><ul><li><strong>Application logs:</strong> timestamp, service, severity, message và context của event.</li><li><strong>APM metrics:</strong> latency, request volume, error rate và resource utilization theo thời gian.</li></ul>
+  <h2>Tải dữ liệu và code</h2><ul><li><a href="application_logs.jsonl">application_logs.jsonl</a></li><li><a href="apm_metrics.jsonl">apm_metrics.jsonl</a></li><li><a href="generate_logs.py">generate_logs.py</a></li><li><a href="generate_metrics.py">generate_metrics.py</a></li></ul>
+  <h2>Cách dùng trong thí nghiệm</h2><ol><li>Chia dữ liệu theo thời gian, không random split.</li><li>Fit preprocessing và baseline trên vùng normal ban đầu.</li><li>Đưa anomaly có kiểm soát vào holdout period.</li><li>Đánh giá detection window, false alert volume và delay.</li><li>Thay đổi seed/severity để kiểm tra độ ổn định.</li></ol><p>Bộ dữ liệu này phù hợp để kiểm tra code và metric. Nó không đại diện đầy đủ cho độ phức tạp của production.</p>
+  <h2>Hiệu chỉnh data contract sau khi kiểm tra file thật</h2><p>Hai artifact hiện tại là JSON Lines và mỗi file có 1.500 record. Logs có các field <code>timestamp, trace_id, span_id, parent_span_id, service, level, path, message, status, latency_ms, is_anomaly</code>. Metrics có <code>timestamp, trace_id, span_id, parent_span_id, service, cpu, memory, latency, throughput, is_anomaly</code>.</p>
+  <div class="callout"><p><strong>Giới hạn tái lập hiện tại:</strong> hai generator tham chiếu <code>trace_chain.py</code>, <code>topology.json</code> và hai YAML config chưa có trong repo. JSONL tải xuống vẫn kiểm tra được, nhưng chưa nên nói dataset có thể regenerate chỉ bằng hai script hiện tại.</p></div>
+  <h3>Validator cho artifact hiện có</h3><pre><code class="language-python">import json
+from pathlib import Path
+
+contracts = {
+    "application_logs.jsonl": {"timestamp", "trace_id", "service", "level", "latency_ms", "is_anomaly"},
+    "apm_metrics.jsonl": {"timestamp", "trace_id", "service", "cpu", "memory", "latency", "is_anomaly"},
+}
+
+for filename, required in contracts.items():
+    rows = [json.loads(line) for line in Path(filename).read_text().splitlines() if line.strip()]
+    missing = [index for index, row in enumerate(rows) if not required.issubset(row)]
+    print(filename, {"rows": len(rows), "invalid_rows": len(missing)})
+    assert rows and not missing</code></pre>
+  <h3>Không đưa <code>is_anomaly</code> vào feature</h3><p>Field này là synthetic ground truth để evaluation. Nếu đi vào preprocessing/model, kết quả sẽ bị label leakage. Cũng cần giữ injection metadata riêng để phân tích performance theo anomaly type và severity thay vì chỉ một aggregate score.</p>
+  <h3>Generator cần deterministic mode</h3><p><code>datetime.now()</code> và random state không cố định khiến mỗi lần chạy khác nhau. Bản tái lập nên nhận seed/start timestamp từ CLI hoặc config, ghi chúng vào manifest và kiểm tra schema sau khi generate.</p>
+</article>
+
+<article class="reading-page" data-lang="en">
+  <header class="page-intro"><p class="eyebrow">Synthetic data · Observability</p><h1>Synthetic logs and metrics</h1><p>A small, non-confidential dataset for testing anomaly-detection pipelines and combining two signal types.</p></header>
+  <div class="callout"><p><strong>The data is entirely synthetic.</strong> Service names, messages, timestamps, and metrics are generated by scripts in the repository.</p></div>
+  <h2>Two signal sources</h2><ul><li><strong>Application logs:</strong> timestamp, service, severity, message, and event context.</li><li><strong>APM metrics:</strong> latency, request volume, error rate, and resource utilization over time.</li></ul>
+  <h2>Download data and code</h2><ul><li><a href="application_logs.jsonl">application_logs.jsonl</a></li><li><a href="apm_metrics.jsonl">apm_metrics.jsonl</a></li><li><a href="generate_logs.py">generate_logs.py</a></li><li><a href="generate_metrics.py">generate_metrics.py</a></li></ul>
+  <h2>Using it in an experiment</h2><ol><li>Split by time rather than randomly.</li><li>Fit preprocessing and a baseline on an initial normal period.</li><li>Inject controlled anomalies into the holdout period.</li><li>Evaluate detection windows, false-alert volume, and delay.</li><li>Vary seeds and severity to test stability.</li></ol><p>This dataset is suitable for testing code and metrics. It does not reproduce the full complexity of production systems.</p>
+  <h2>Corrected data contract after inspecting the artifacts</h2><p>The current artifacts are JSON Lines files with 1,500 records each. Logs contain <code>timestamp, trace_id, span_id, parent_span_id, service, level, path, message, status, latency_ms, is_anomaly</code>. Metrics contain <code>timestamp, trace_id, span_id, parent_span_id, service, cpu, memory, latency, throughput, is_anomaly</code>.</p>
+  <div class="callout"><p><strong>Current reproducibility limit:</strong> both generators import <code>trace_chain.py</code>, <code>topology.json</code>, and two YAML configuration files that are not in this repository. The downloadable JSONL can be validated, but the dataset cannot yet be regenerated from the two published scripts alone.</p></div>
+  <h3>Validate the existing artifacts</h3><pre><code class="language-python">import json
+from pathlib import Path
+
+contracts = {
+    "application_logs.jsonl": {"timestamp", "trace_id", "service", "level", "latency_ms", "is_anomaly"},
+    "apm_metrics.jsonl": {"timestamp", "trace_id", "service", "cpu", "memory", "latency", "is_anomaly"},
+}
+
+for filename, required in contracts.items():
+    rows = [json.loads(line) for line in Path(filename).read_text().splitlines() if line.strip()]
+    missing = [index for index, row in enumerate(rows) if not required.issubset(row)]
+    print(filename, {"rows": len(rows), "invalid_rows": len(missing)})
+    assert rows and not missing</code></pre>
+  <h3>Keep <code>is_anomaly</code> out of the features</h3><p>This field is synthetic ground truth for evaluation. Feeding it into preprocessing or the model creates label leakage. Keep injection metadata separately as well, so performance can be analyzed by anomaly type and severity instead of only one aggregate score.</p>
+  <h3>Give the generator a deterministic mode</h3><p><code>datetime.now()</code> and unseeded randomness make every run different. A reproducible version should accept seed/start time through CLI or config, write them to a manifest, and validate the schema after generation.</p>
+</article>

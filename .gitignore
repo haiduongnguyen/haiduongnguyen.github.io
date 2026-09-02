@@ -38,3 +38,8 @@
 #*.[pP][oO][tT][mM]
 #*.[pP][pP][sS]
 #*.[pP][pP][sS][mM]
+
+# Jekyll build output
+_site/
+.jekyll-cache/
+.sass-cache/

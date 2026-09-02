@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    {% seo %}
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0b6b5d">
+    <meta name="color-scheme" content="light">
+    <link rel="icon" href="{{ '/assets/icons/favicon.svg' | relative_url }}" type="image/svg+xml">
+    <link rel="stylesheet" href="{{ '/assets/css/style.css?v=' | append: site.github.build_revision | relative_url }}">
+    <script src="{{ '/assets/js/language.js?v=' | append: site.github.build_revision | relative_url }}" defer></script>
+    {% include head-custom.html %}
+  </head>
+  <body
+    data-title-vi="{{ page.title_vi | default: page.title | default: site.title | escape }}"
+    data-title-en="{{ page.title_en | default: page.title | default: site.title | escape }}"
+    data-description-vi="{{ page.description_vi | default: page.description | default: site.description | escape }}"
+    data-description-en="{{ page.description_en | default: page.description | default: site.description | escape }}"
+  >
+    <a class="skip-link" href="#main-content">
+      <span data-lang="vi">Đi đến nội dung chính</span>
+      <span data-lang="en">Skip to main content</span>
+    </a>
+
+    <header class="site-header">
+      <div class="site-header__inner">
+        <a class="brand" href="{{ '/' | relative_url }}" aria-label="Hai Duong Nguyen — Home">
+          <span class="brand__mark" aria-hidden="true">HD</span>
+          <span class="brand__text">
+            <strong>Hai Duong Nguyen</strong>
+            <small>Data · Banking · Machine Learning</small>
+          </span>
+        </a>
+
+        <nav class="site-nav" aria-label="Primary navigation">
+          <a href="{{ '/' | relative_url }}">
+            <span data-lang="vi">Trang chủ</span><span data-lang="en">Home</span>
+          </a>
+          <a href="{{ '/writing/' | relative_url }}">
+            <span data-lang="vi">Bài viết</span><span data-lang="en">Writing</span>
+          </a>
+          <a href="https://haiduongnguyen.github.io/banking-metrics-lab/" data-banking-lab-link>
+            <span data-lang="vi">Tài chính ngân hàng</span><span data-lang="en">Finance in banking</span>
+          </a>
+          <a href="{{ '/about/' | relative_url }}">
+            <span data-lang="vi">Giới thiệu</span><span data-lang="en">About</span>
+          </a>
+        </nav>
+
+        <div class="language-switcher" role="group" aria-label="Language / Ngôn ngữ">
+          <button class="language-option" type="button" data-set-language="vi" aria-pressed="false">VI</button>
+          <button class="language-option" type="button" data-set-language="en" aria-pressed="true">EN</button>
+        </div>
+      </div>
+    </header>
+
+    <main id="main-content" class="page-shell">
+      {{ content }}
+    </main>
+
+    <footer class="site-footer">
+      <div class="site-footer__inner">
+        <div>
+          <strong>Hai Duong Nguyen</strong>
+          <p data-lang="vi">Ghi chép thực tế về dữ liệu ngân hàng, machine learning và time series.</p>
+          <p data-lang="en">Practical notes on banking data, machine learning, and time series.</p>
+        </div>
+        <div class="site-footer__links">
+          <a href="https://github.com/haiduongnguyen" rel="me">GitHub</a>
+          <a href="https://www.linkedin.com/in/nguyen-hai-duong-1a34a71ba/" rel="me">LinkedIn</a>
+          <a href="{{ '/privacy/' | relative_url }}">
+            <span data-lang="vi">Quyền riêng tư</span><span data-lang="en">Privacy</span>
+          </a>
+        </div>
+      </div>
+      <p class="site-footer__note">
+        <span data-lang="vi">Các ví dụ về ngân hàng được tổng hợp hoặc ẩn danh; không công bố dữ liệu khách hàng.</span>
+        <span data-lang="en">Banking examples are aggregated or anonymized; no customer data is published.</span>
+      </p>
+    </footer>
+  </body>
+</html>

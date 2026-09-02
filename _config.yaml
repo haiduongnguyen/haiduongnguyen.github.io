@@ -1,15 +1,17 @@
 title: Hai Duong Nguyen
-description: Data Analyst in Banking | Machine Learning | Time Series
-theme: jekyll-theme-cayman
+description: Data analyst in banking sharing practical work in customer analytics, time series, and anomaly detection.
+url: https://haiduongnguyen.github.io
+lang: en
 
-# google_analytics: G-GZCJYZ4VZ5
+plugins:
+  - jekyll-seo-tag
+  - jekyll-sitemap
 
-# <!-- Google tag (gtag.js) -->
-# <script async src="https://www.googletagmanager.com/gtag/js?id=G-GZCJYZ4VZ5"></script>
-# <script>
-#   window.dataLayer = window.dataLayer || [];
-#   function gtag(){dataLayer.push(arguments);}
-#   gtag('js', new Date());
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: default
 
-#   gtag('config', 'G-GZCJYZ4VZ5');
-# </script>
+exclude:
+  - README.md
