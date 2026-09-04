@@ -1,36 +1,182 @@
-﻿---
-title: Isolation Forest
-title_vi: Isolation Forest — trực giác và đánh giá
-title_en: Isolation Forest — intuition and evaluation
-description: Isolation Forest converts random-partition path length into anomaly scores that require data-specific thresholds and event-level evaluation.
-description_vi: Isolation Forest chuyển path length từ random partition thành anomaly score cần threshold theo dữ liệu và đánh giá theo event.
-description_en: Isolation Forest converts random-partition path length into anomaly scores that require data-specific thresholds and event-level evaluation.
+---
+title: "Isolation Forest: Anomalies Need Fewer Random Splits"
+title_vi: "Isolation Forest: anomaly cần ít random split hơn"
+title_en: "Isolation Forest: Anomalies Need Fewer Random Splits"
+description: Isolation Forest turns random-tree path length into an anomaly score; the threshold then determines which scores become alerts.
+description_vi: Isolation Forest chuyển path length của random tree thành anomaly score; threshold quyết định score nào thành cảnh báo.
+description_en: Isolation Forest turns random-tree path length into an anomaly score; the threshold then determines which scores become alerts.
 date: 2026-02-01
 writing_topic: anomaly
 ---
 
-<article class="reading-page" data-lang="vi">
-  <header class="page-intro"><h1>Isolation Forest</h1><p>Thay vì học “normal” trước, Isolation Forest tìm các điểm dễ bị cô lập bằng random partition.</p></header>
-  <h2>Trực giác</h2><p>Mỗi isolation tree chọn ngẫu nhiên một feature và một split value. Điểm hiếm và khác biệt thường cần ít split hơn để đứng một mình, nên có average path length ngắn hơn.</p>
-  <h2>Anomaly score</h2><pre><code>s(x, ψ) = 2 ^ (-E[h(x)] / c(ψ))</code></pre><p><code>ψ</code> là subsample size, <code>E[h(x)]</code> là path length trung bình và <code>c(ψ)</code> chuẩn hóa theo expected path length của binary search tree. Score cao hơn biểu thị điểm dễ bị cô lập hơn.</p>
-  <h2>Lưu ý thực tế</h2><ul><li>Scale ít quan trọng hơn distance-based model, nhưng feature representation vẫn quyết định kết quả.</li><li><code>contamination</code> ảnh hưởng threshold, không thay thế việc định nghĩa chi phí false positive/negative.</li><li>Với time series, cần tránh random split làm rò rỉ tương lai và phải kiểm tra drift.</li><li>Đánh giá bằng labeled incidents nếu có; nếu không, dùng injection test, review chuyên gia và stability.</li></ul>
-  <h2>Implementation, threshold và đánh giá theo event</h2>
-  <h3>Pseudo-code cần thêm cấu trúc cây và expected path length</h3><p>Các dòng như <code>q = randomly select feature</code> cần được thay bằng random generator và data structure cho internal/external node trong code thật. Khi path kết thúc ở external node chứa nhiều hơn một mẫu, implementation chuẩn còn cộng expected path length <code>c(size)</code>; chỉ trả về current depth sẽ làm score lệch.</p>
-  <h3>Không có threshold 0,5–0,6 dùng chung cho mọi dữ liệu</h3><p>Score phụ thuộc sample, feature representation và implementation. <code>contamination</code> đặt quantile threshold theo tỷ lệ anomaly giả định; nó không chứng minh tỷ lệ đó đúng. Hãy chọn threshold trên validation incident, alert budget hoặc cost function và đóng băng trước khi đánh giá test.</p>
-  <h3>Time series cần feature có ngữ cảnh</h3><p>Isolation Forest không tự hiểu thứ tự thời gian hay seasonality. Cần tạo lag, rolling statistic hoặc seasonal residual chỉ từ quá khứ. Một spike 100 giao dịch có thể bình thường vào ngày lương nhưng bất thường vào cuối tuần; timestamp context quyết định ý nghĩa.</p>
-  <h3>Đánh giá theo event thay vì từng dòng</h3><p>Một incident kéo dài 20 phút có thể tạo 20 timestamp bất thường nhưng chỉ là một event vận hành. Nên báo event precision/recall, detection delay, số alert mỗi ngày và false-positive run length bên cạnh point-wise metric.</p>
-  <h2>Nguồn</h2><ul><li><a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.IsolationForest.html">Scikit-learn: IsolationForest</a></li><li><a href="https://doi.org/10.1109/ICDM.2008.17">Liu, Ting &amp; Zhou (2008)</a></li></ul>
-</article>
+{% capture article_en %}
+🔙 [Back to Home](/)
 
-<article class="reading-page" data-lang="en">
-  <header class="page-intro"><h1>Isolation Forest</h1><p>Instead of first modeling “normal,” Isolation Forest searches for observations that are easy to isolate with random partitions.</p></header>
-  <h2>Intuition</h2><p>Each isolation tree randomly selects a feature and split value. Rare, different points usually require fewer splits to stand alone, giving them a shorter average path length.</p>
-  <h2>Anomaly score</h2><pre><code>s(x, ψ) = 2 ^ (-E[h(x)] / c(ψ))</code></pre><p><code>ψ</code> is the subsample size, <code>E[h(x)]</code> is average path length, and <code>c(ψ)</code> normalizes by the expected path length of a binary search tree. Higher scores indicate easier isolation.</p>
-  <h2>Practical notes</h2><ul><li>Scaling matters less than for distance-based models, but feature representation still determines the result.</li><li><code>contamination</code> affects the threshold; it does not replace an explicit false-positive/false-negative cost.</li><li>For time series, avoid future leakage and monitor drift.</li><li>Evaluate with labeled incidents when available; otherwise combine injection tests, expert review, and stability checks.</li></ul>
-  <h2>Implementation, thresholds, and event-level evaluation</h2>
-  <h3>Pseudo-code needs tree structures and expected path length</h3><p>Lines such as <code>q = randomly select feature</code> need a random generator and concrete internal/external node structures. When traversal ends in an external node containing multiple samples, the standard path-length calculation also adds the expected path length <code>c(size)</code>; returning only the current depth biases the score.</p>
-  <h3>There is no universal 0.5–0.6 threshold</h3><p>Scores depend on the sample, feature representation, and implementation. <code>contamination</code> sets a quantile threshold from an assumed anomaly rate; it does not prove that rate. Select the threshold from validation incidents, an alert budget, or a cost function, then freeze it before test evaluation.</p>
-  <h3>Time series need contextual features</h3><p>Isolation Forest does not understand order or seasonality by itself. Build lags, rolling statistics, or seasonal residuals from past data only. A spike of 100 transactions may be normal on payday and abnormal on a weekend; timestamp context changes the meaning.</p>
-  <h3>Evaluate events, not only rows</h3><p>A twenty-minute incident may produce twenty anomalous timestamps but represents one operational event. Report event precision/recall, detection delay, alerts per day, and false-positive run length alongside point-wise metrics.</p>
-  <h2>Sources</h2><ul><li><a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.IsolationForest.html">Scikit-learn: IsolationForest</a></li><li><a href="https://doi.org/10.1109/ICDM.2008.17">Liu, Ting &amp; Zhou (2008)</a></li></ul>
-</article>
+# Isolation Forest: Anomalies Need Fewer Random Splits
+
+Isolation Forest does not first learn what a normal cluster looks like. It repeatedly chooses a random feature and a random split value, then measures how many splits are needed to isolate each observation. Points that are few and different tend to be isolated earlier.
+
+## Random partitions create an isolation path
+
+Each isolation tree is built from a random subsample:
+
+1. Select a feature at random.
+2. Select a split value between that feature's minimum and maximum values.
+3. Send observations to the left or right child.
+4. Repeat until an observation is isolated or the tree reaches its height limit.
+
+The **path length** is the number of edges from the root to the terminating node. Short paths indicate observations that were easy to separate from the rest of the sample.
+
+## Average path length becomes an anomaly score
+
+Across multiple trees, the score is:
+
+```text
+s(x, n) = 2^(-E[h(x)] / c(n))
+```
+
+- `E[h(x)]`: average path length of observation `x` across the forest.
+- `c(n)`: expected path length of an unsuccessful search in a binary search tree.
+- `n`: subsample size.
+
+A shorter average path produces a score closer to 1. A longer path produces a score closer to 0.
+
+## The tree-building logic is small
+
+This pseudocode keeps the original recursive idea visible:
+
+```python
+def build_iTree(X, height_limit, current_height=0):
+    if current_height >= height_limit or len(X) <= 1:
+        return ExNode(size=len(X))
+
+    q = randomly_select_feature(X)
+    p = randomly_select_value(min(X[:, q]), max(X[:, q]))
+
+    X_left = X[X[:, q] < p]
+    X_right = X[X[:, q] >= p]
+
+    return InNode(
+        left=build_iTree(X_left, height_limit, current_height + 1),
+        right=build_iTree(X_right, height_limit, current_height + 1),
+        split_attribute=q,
+        split_value=p,
+    )
+```
+
+The same observation is passed through every tree, and its path lengths are averaged before calculating the score.
+
+```python
+def path_length(x, tree, current_height=0):
+    if isinstance(tree, ExNode):
+        return current_height
+
+    if x[tree.split_attribute] < tree.split_value:
+        return path_length(x, tree.left, current_height + 1)
+    return path_length(x, tree.right, current_height + 1)
+```
+
+## Subsampling is part of the method
+
+The original method uses small random subsamples; `256` observations is a common default when the dataset is larger than that. Small samples make trees cheaper to build and reduce the chance that many normal observations hide an anomaly inside a dense region.
+
+The main parameters control different parts of the result:
+
+- Number of trees controls how many random partitions contribute to the average.
+- Subsample size controls the population seen by each tree.
+- Maximum features controls which dimensions are available to each tree.
+- The score threshold controls how many observations are finally labeled anomalous.
+
+## A score is not yet an alert
+
+Isolation Forest produces a ranking or score before it produces a business decision. A fixed threshold such as `0.5` or `0.6` is not automatically correct for every dataset. The useful threshold depends on the expected anomaly rate and, more importantly, how many false alerts can be reviewed.
+
+This separation matters in practice: the forest generates anomaly evidence; the operating threshold decides what the team must investigate.
+{% endcapture %}
+<article class="reading-page" data-lang="en">{{ article_en | markdownify }}</article>
+
+{% capture article_vi %}
+🔙 [Quay lại trang chủ](/)
+
+# Isolation Forest: anomaly cần ít random split hơn
+
+Isolation Forest không bắt đầu bằng việc học một normal cluster trông như thế nào. Thuật toán liên tục chọn ngẫu nhiên một feature và một split value, sau đó đo số lần split cần thiết để cô lập từng observation. Những point vừa ít vừa khác biệt thường được cô lập sớm hơn.
+
+## Random partition tạo isolation path
+
+Mỗi isolation tree được xây dựng từ một random subsample:
+
+1. Chọn ngẫu nhiên một feature.
+2. Chọn một split value nằm giữa giá trị nhỏ nhất và lớn nhất của feature đó.
+3. Đưa observation vào left hoặc right child.
+4. Lặp lại cho đến khi observation được cô lập hoặc cây chạm height limit.
+
+**Path length** là số edge từ root đến terminating node. Path ngắn cho biết observation dễ tách khỏi phần còn lại của sample.
+
+## Average path length trở thành anomaly score
+
+Trên nhiều tree, score được tính bằng:
+
+```text
+s(x, n) = 2^(-E[h(x)] / c(n))
+```
+
+- `E[h(x)]`: average path length của observation `x` trên toàn forest.
+- `c(n)`: expected path length của một unsuccessful search trong binary search tree.
+- `n`: subsample size.
+
+Average path ngắn hơn tạo score gần 1; path dài hơn tạo score gần 0.
+
+## Logic xây tree khá ngắn
+
+Pseudocode này giữ lại ý tưởng recursive ban đầu:
+
+```python
+def build_iTree(X, height_limit, current_height=0):
+    if current_height >= height_limit or len(X) <= 1:
+        return ExNode(size=len(X))
+
+    q = randomly_select_feature(X)
+    p = randomly_select_value(min(X[:, q]), max(X[:, q]))
+
+    X_left = X[X[:, q] < p]
+    X_right = X[X[:, q] >= p]
+
+    return InNode(
+        left=build_iTree(X_left, height_limit, current_height + 1),
+        right=build_iTree(X_right, height_limit, current_height + 1),
+        split_attribute=q,
+        split_value=p,
+    )
+```
+
+Cùng một observation được đi qua từng tree, sau đó path length được lấy trung bình trước khi tính score.
+
+```python
+def path_length(x, tree, current_height=0):
+    if isinstance(tree, ExNode):
+        return current_height
+
+    if x[tree.split_attribute] < tree.split_value:
+        return path_length(x, tree.left, current_height + 1)
+    return path_length(x, tree.right, current_height + 1)
+```
+
+## Subsampling là một phần của phương pháp
+
+Phương pháp ban đầu dùng các random subsample nhỏ; `256` observation là default phổ biến khi dataset lớn hơn con số này. Sample nhỏ làm tree rẻ hơn khi xây dựng và giảm khả năng nhiều normal observation che khuất một anomaly trong vùng dày.
+
+Các parameter chính kiểm soát những phần khác nhau:
+
+- Số tree kiểm soát số random partition đóng góp vào average.
+- Subsample size kiểm soát population mà từng tree nhìn thấy.
+- Maximum features kiểm soát các dimension tree có thể sử dụng.
+- Score threshold kiểm soát số observation cuối cùng được gắn nhãn anomalous.
+
+## Có score chưa có nghĩa là đã có alert
+
+Isolation Forest tạo ranking hoặc score trước khi tạo business decision. Một threshold cố định như `0.5` hoặc `0.6` không tự động đúng với mọi dataset. Threshold hữu ích phụ thuộc vào expected anomaly rate và quan trọng hơn là số false alert mà nhóm vận hành có thể review.
+
+Sự phân tách này quan trọng trong thực tế: forest tạo anomaly evidence; operating threshold quyết định điều gì team phải điều tra.
+{% endcapture %}
+<article class="reading-page" data-lang="vi">{{ article_vi | markdownify }}</article>

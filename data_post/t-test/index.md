@@ -1,74 +1,268 @@
-﻿---
-title: T-tests
-title_vi: T-test — chọn đúng kiểm định và báo cáo đúng
-title_en: T-tests — choosing and reporting the right test
-description: One-sample, Welch's independent, and paired t-tests with assumptions, confidence intervals, and Python examples.
-description_vi: One-sample, Welch independent và paired t-test với assumptions, confidence interval và ví dụ Python.
-description_en: One-sample, Welch's independent, and paired t-tests with assumptions, confidence intervals, and Python examples.
+---
+title: "Choose the T-Test From the Data Structure"
+title_vi: "Chọn T-test từ cấu trúc dữ liệu"
+title_en: "Choose the T-Test From the Data Structure"
+description: Decide between one-sample, independent, and paired t-tests before calculating a p-value.
+description_vi: Chọn giữa one-sample, independent và paired t-test trước khi tính p-value.
+description_en: Decide between one-sample, independent, and paired t-tests before calculating a p-value.
 date: 2026-04-08
 writing_topic: statistics
 ---
 
-<article class="reading-page" data-lang="vi">
-  <header class="page-intro"><h1>T-test</h1><p>Nhóm kiểm định dùng chênh lệch mean, mức biến thiên và sample size để đánh giá một khác biệt có tương thích với giả thuyết không hay không.</p></header>
-  <h2>Chọn loại nào?</h2><div class="table-wrap"><table><thead><tr><th>Thiết kế</th><th>Kiểm định</th><th>Ví dụ</th></tr></thead><tbody><tr><td>Một mẫu so với mốc</td><td>One-sample t-test</td><td>Mean transaction amount có khác 1 triệu?</td></tr><tr><td>Hai nhóm độc lập</td><td>Welch’s t-test</td><td>Mean của segment A và B</td></tr><tr><td>Cùng đối tượng trước/sau</td><td>Paired t-test</td><td>Chi tiêu trước và sau campaign</td></tr></tbody></table></div>
-  <p>Với hai nhóm độc lập, Welch’s t-test thường là lựa chọn an toàn hơn vì không giả định equal variance.</p>
-  <h2>Assumptions</h2><ul><li>Quan sát độc lập theo đúng thiết kế.</li><li>Outcome là dữ liệu số và mean có ý nghĩa.</li><li>Dữ liệu hoặc paired differences không có outlier quá mạnh.</li><li>Normality quan trọng hơn khi mẫu nhỏ; với mẫu lớn, cần chú ý practical significance vì p-value rất nhạy.</li></ul>
-  <h2>Python</h2><pre><code>from scipy import stats
+{% capture article_en %}
+🔙 [Back to Home](/)
 
-one_sample = stats.ttest_1samp(sample, popmean=100)
-independent = stats.ttest_ind(group_a, group_b, equal_var=False)
-paired = stats.ttest_rel(before, after)</code></pre>
-  <h2>Đừng chỉ báo p-value</h2><p>Nên báo mean của mỗi nhóm, mean difference, confidence interval, effect size, sample size và assumptions. P-value nhỏ không nói khác biệt có lớn hoặc hữu ích trong kinh doanh hay không.</p>
-  <h2>P-value, normality, uncertainty và multiple testing</h2>
-  <h3>P-value là xác suất có điều kiện theo H₀</h3><p>P-value không phải xác suất “kết quả xảy ra do ngẫu nhiên”, cũng không phải xác suất H₀ đúng. Nó là xác suất thu được test statistic ít nhất cực đoan như statistic đã quan sát, với điều kiện H₀ và các assumptions của model đúng. Cách diễn đạt này dài hơn nhưng tránh một trong những hiểu nhầm phổ biến nhất của thống kê.</p>
-  <h3>Normality áp dụng cho đại lượng được kiểm định</h3><p>Với paired t-test, điều cần gần normal là phân phối của paired differences, không phải từng cột before và after riêng lẻ. Với two-sample test, independence và sampling design thường quan trọng hơn một normality test máy móc. Shapiro–Wilk có thể quá nhạy khi n lớn và thiếu power khi n nhỏ; nên xem Q–Q plot, outlier và ý nghĩa của mean.</p>
-  <h3>Welch thường là mặc định tốt cho hai nhóm độc lập</h3><p>Student’s pooled t-test cần giả định equal variance. Welch’s test không cần giả định đó và thường mất rất ít power khi variance thực sự bằng nhau. Equal variance phải đến từ thiết kế hoặc bằng chứng vững, không nên chỉ dựa vào một preliminary test rồi mới quyết định test chính.</p>
-  <h3>Thêm uncertainty bằng bootstrap interval</h3><pre><code class="language-python">import numpy as np
+# Choose the T-Test From the Data Structure
 
-def bootstrap_mean_difference(group_a, group_b, repeats=10_000, seed=42):
-    rng = np.random.default_rng(seed)
-    differences = np.empty(repeats)
-    for index in range(repeats):
-        sample_a = rng.choice(group_a, size=len(group_a), replace=True)
-        sample_b = rng.choice(group_b, size=len(group_b), replace=True)
-        differences[index] = sample_a.mean() - sample_b.mean()
-    estimate = np.mean(group_a) - np.mean(group_b)
-    lower, upper = np.quantile(differences, [0.025, 0.975])
-    return estimate, (lower, upper)</code></pre>
-  <p>Bootstrap không sửa được dữ liệu phụ thuộc hoặc sample bias. Resampling unit phải khớp thiết kế: nếu dữ liệu được cluster theo khách hàng, cần resample theo khách hàng thay vì từng transaction.</p>
-  <h3>Đặt kế hoạch cho multiple testing</h3><p>Nếu thử 100 feature với α = 0,05, false positive sẽ xuất hiện ngay cả khi không có effect thật. Xác định primary metric trước, hoặc dùng điều chỉnh như Holm/Benjamini–Hochberg tùy mục tiêu kiểm soát family-wise error hay false discovery rate.</p>
-  <h2>Nguồn</h2><ul><li><a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.ttest_1samp.html">SciPy: ttest_1samp</a></li><li><a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.ttest_ind.html">SciPy: ttest_ind</a></li><li><a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.ttest_rel.html">SciPy: ttest_rel</a></li></ul>
-</article>
+A t-test evaluates a difference in means relative to the uncertainty in that difference. The first decision is not the significance level or the Python function; it is whether the data represent one sample, two independent groups, or paired observations.
 
-<article class="reading-page" data-lang="en">
-  <header class="page-intro"><h1>T-tests</h1><p>A family of tests that uses a mean difference, variability, and sample size to evaluate compatibility with a null hypothesis.</p></header>
-  <h2>Which test?</h2><div class="table-wrap"><table><thead><tr><th>Design</th><th>Test</th><th>Example</th></tr></thead><tbody><tr><td>One sample versus a reference</td><td>One-sample t-test</td><td>Does mean transaction amount differ from one million?</td></tr><tr><td>Two independent groups</td><td>Welch’s t-test</td><td>Mean difference between segments A and B</td></tr><tr><td>Same units before/after</td><td>Paired t-test</td><td>Spending before and after a campaign</td></tr></tbody></table></div>
-  <p>For two independent groups, Welch’s t-test is often the safer default because it does not assume equal variances.</p>
-  <h2>Assumptions</h2><ul><li>Observations follow the independence or pairing in the design.</li><li>The outcome is numerical and a mean is meaningful.</li><li>The data or paired differences are not dominated by extreme outliers.</li><li>Normality matters more with small samples; with large samples, focus on practical significance because p-values become sensitive.</li></ul>
-  <h2>Python</h2><pre><code>from scipy import stats
+## Read the t-statistic and p-value separately
 
-one_sample = stats.ttest_1samp(sample, popmean=100)
-independent = stats.ttest_ind(group_a, group_b, equal_var=False)
-paired = stats.ttest_rel(before, after)</code></pre>
-  <h2>Report more than a p-value</h2><p>Include group means, the mean difference, a confidence interval, effect size, sample sizes, and assumptions. A small p-value does not say whether the effect is large or useful.</p>
-  <h2>P-values, normality, uncertainty, and multiple testing</h2>
-  <h3>A p-value is conditional on the null hypothesis</h3><p>A p-value is not the probability that the result “occurred by chance,” nor the probability that the null is true. It is the probability of a test statistic at least as extreme as the observed statistic, assuming the null hypothesis and model assumptions hold. The longer wording prevents one of the most common statistical misinterpretations.</p>
-  <h3>Normality applies to the quantity being tested</h3><p>For a paired t-test, the paired differences—not the two before/after columns separately—should be approximately normal. For independent groups, independence and sampling design are often more important than a mechanical normality test. Shapiro–Wilk can be overly sensitive at large n and underpowered at small n; inspect Q–Q plots, outliers, and whether a mean is meaningful.</p>
-  <h3>Welch is a sensible default for independent groups</h3><p>Student’s pooled t-test assumes equal variances. Welch’s test does not and usually gives up little power when variances really are equal. Equal variance should follow from the design or strong evidence, not from using one preliminary test to decide which primary test to run.</p>
-  <h3>Add uncertainty with a bootstrap interval</h3><pre><code class="language-python">import numpy as np
+- **Null hypothesis (`H₀`):** the population mean or mean difference equals the value being tested, commonly zero.
+- **Alternative hypothesis (`H₁`):** the population mean or mean difference is different from that value.
+- **t-statistic:** the observed difference measured in standard-error units. A larger absolute value is less compatible with the null hypothesis.
+- **p-value:** assuming the null hypothesis and model assumptions are true, the probability of obtaining a result at least as extreme as the observed one.
 
-def bootstrap_mean_difference(group_a, group_b, repeats=10_000, seed=42):
-    rng = np.random.default_rng(seed)
-    differences = np.empty(repeats)
-    for index in range(repeats):
-        sample_a = rng.choice(group_a, size=len(group_a), replace=True)
-        sample_b = rng.choice(group_b, size=len(group_b), replace=True)
-        differences[index] = sample_a.mean() - sample_b.mean()
-    estimate = np.mean(group_a) - np.mean(group_b)
-    lower, upper = np.quantile(differences, [0.025, 0.975])
-    return estimate, (lower, upper)</code></pre>
-  <p>Bootstrap resampling does not repair dependent data or sampling bias. Match the resampling unit to the design: customer-clustered observations should be resampled by customer, not by transaction.</p>
-  <h3>Plan for multiple testing</h3><p>Testing 100 features at α = 0.05 produces false positives even when no real effects exist. Pre-specify a primary metric, or use a procedure such as Holm or Benjamini–Hochberg depending on whether the goal is family-wise error or false-discovery-rate control.</p>
-  <h2>Sources</h2><ul><li><a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.ttest_1samp.html">SciPy: ttest_1samp</a></li><li><a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.ttest_ind.html">SciPy: ttest_ind</a></li><li><a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.ttest_rel.html">SciPy: ttest_rel</a></li></ul>
-</article>
+If `p < α`, where `α` is chosen before looking at the result, reject `H₀`. This decision does not tell us whether the difference is large enough to matter in practice.
+
+## Check the assumptions for the test you selected
+
+The assumptions apply to the observations or differences being modeled:
+
+1. **Numeric outcome:** the measured variable should be quantitative.
+2. **Independent observations:** required between subjects; paired measurements are handled as within-subject differences.
+3. **Approximate normality:** the sample values for a one-sample test, each group for a small independent test, or the pairwise differences for a paired test should be approximately normal. A Q–Q plot or Shapiro–Wilk test can help check this.
+4. **Equal variances:** required by the pooled independent t-test, but not by Welch's t-test. When equal variance is not defensible, use Welch's version.
+
+## The three tests answer different questions
+
+There are three main types of T-tests depending on the structure of your data and what you want to compare:
+
+### One-sample t-test: compare one sample with a reference mean
+
+- **Formula:** `t = (x̄ - μ) / (s / √n)`
+  (`x̄` = sample mean, `μ` = reference mean, `s` = sample standard deviation, `n` = sample size)
+
+- **Example:** A teacher has a class of 30 students and wants to test whether their average height differs from `170 cm`.
+
+### Independent t-test: compare two unrelated groups
+
+- **Formula under equal variances:** `t = (x̄₁ - x̄₂) / (sₚ × √(1/n₁ + 1/n₂))`
+  (`sₚ` is the pooled standard deviation.)
+
+- **Example:** A teacher wants to test if there is a significant height difference between Class A and Class B.
+
+### Paired t-test: test the within-pair differences
+
+- **Formula:** `t = d̄ / (s_d / √n)`
+  (`d̄` = mean paired difference, `s_d` = standard deviation of the differences.)
+
+- **Example:** Measuring the weight of 20 patients *before* and *after* an 8-week diet plan.
+
+---
+
+## Run all three tests with SciPy
+
+The examples use reproducible synthetic data and match each data structure to its corresponding SciPy function.
+
+```python
+import numpy as np
+from scipy import stats
+
+# Set random seed to generate reproducible dummy data
+np.random.seed(42)
+
+# ==========================================
+# 1. One-Sample T-test
+# ==========================================
+print("--- 1. One-Sample T-test ---")
+
+# Hypothesis: Is the sample mean significantly different from 170?
+sample_heights = np.random.normal(loc=172, scale=5, size=30)
+theoretical_mean = 170
+
+t_stat, p_value = stats.ttest_1samp(sample_heights, theoretical_mean)
+
+print(f"T-statistic: {t_stat:.4f}, p-value: {p_value:.4f}")
+if p_value < 0.05:
+    print("=> Reject Null Hypothesis: The mean is significantly different from 170.\n")
+else:
+    print("=> Fail to Reject Null Hypothesis: No significant difference.\n")
+
+
+# ==========================================
+# 2. Independent Two-Sample T-test
+# ==========================================
+print("--- 2. Independent Two-Sample T-test ---")
+
+# Hypothesis: Are the means of Class A and Class B different?
+class_a_heights = np.random.normal(loc=168, scale=5, size=30)
+class_b_heights = np.random.normal(loc=175, scale=6, size=35)
+
+# By default, ttest_ind assumes equal population variances.
+# Because standard deviations are 5 and 6 (slightly different), we use Welch's t-test by setting equal_var=False
+t_stat, p_value = stats.ttest_ind(class_a_heights, class_b_heights, equal_var=False)
+
+print(f"T-statistic: {t_stat:.4f}, p-value: {p_value:.4f}")
+if p_value < 0.05:
+    print("=> Reject Null Hypothesis: There is a significant difference between Class A and Class B.\n")
+else:
+    print("=> Fail to Reject Null Hypothesis: No significant difference.\n")
+
+
+# ==========================================
+# 3. Paired Sample T-test
+# ==========================================
+print("--- 3. Paired Sample T-test ---")
+
+# Hypothesis: Is there a significant difference in weight before and after the diet?
+weight_before = np.random.normal(loc=85, scale=10, size=20)
+
+# Assume the diet causes an average weight loss of 3kg per person
+weight_after = weight_before - np.random.normal(loc=3, scale=2, size=20)
+
+t_stat, p_value = stats.ttest_rel(weight_before, weight_after)
+
+print(f"T-statistic: {t_stat:.4f}, p-value: {p_value:.4f}")
+if p_value < 0.05:
+    print("=> Reject Null Hypothesis: The weight before and after the diet are significantly different.\n")
+else:
+    print("=> Fail to Reject Null Hypothesis: No significant difference.\n")
+```
+
+## Choose from the relationship between observations
+
+- Use a **one-sample t-test** for one group against a reference value.
+- Use an **independent t-test**, preferably Welch's when equal variance is uncertain, for two unrelated groups.
+- Use a **paired t-test** when the same subjects are measured twice or observations are explicitly matched.
+
+The pairing or independence comes from how the data were collected. It cannot be inferred from the two columns after the fact.
+{% endcapture %}
+<article class="reading-page" data-lang="en">{{ article_en | markdownify }}</article>
+
+{% capture article_vi %}
+🔙 [Quay lại trang chủ](/)
+
+# Chọn T-test từ cấu trúc dữ liệu
+
+T-test đánh giá chênh lệch trung bình so với mức uncertainty của chênh lệch đó. Quyết định đầu tiên không phải significance level hay hàm Python; cần xác định dữ liệu là một sample, hai group độc lập hay các observation theo cặp.
+
+## Đọc t-statistic và p-value riêng biệt
+
+- **Null hypothesis (`H₀`):** population mean hoặc mean difference bằng giá trị đang được kiểm định, thường là 0.
+- **Alternative hypothesis (`H₁`):** population mean hoặc mean difference khác giá trị đó.
+- **t-statistic:** chênh lệch quan sát được tính theo đơn vị standard error. Absolute value lớn hơn ít tương thích với null hypothesis hơn.
+- **p-value:** nếu null hypothesis và các assumption của model đúng, đây là xác suất thu được kết quả ít nhất cực đoan như kết quả đã quan sát.
+
+Nếu `p < α`, với `α` được chọn trước khi xem kết quả, bác bỏ `H₀`. Quyết định này không cho biết chênh lệch có đủ lớn để mang ý nghĩa thực tế hay không.
+
+## Kiểm tra assumption cho test đã chọn
+
+Assumption áp dụng cho observation hoặc difference đang được model:
+
+1. **Numeric outcome:** biến được đo phải là quantitative.
+2. **Observation độc lập:** cần thiết giữa các subject; paired measurement được xử lý dưới dạng within-subject difference.
+3. **Gần phân phối chuẩn:** sample value của one-sample test, từng group trong independent test có sample nhỏ, hoặc pairwise difference trong paired test nên gần phân phối chuẩn. Có thể kiểm tra bằng Q–Q plot hoặc Shapiro–Wilk test.
+4. **Equal variance:** pooled independent t-test cần assumption này, nhưng Welch's t-test thì không. Khi không thể bảo vệ giả định equal variance, dùng Welch's version.
+
+## Ba test trả lời ba câu hỏi khác nhau
+
+### One-sample t-test: so sánh một sample với reference mean
+
+- **Công thức:** `t = (x̄ - μ) / (s / √n)`
+  (`x̄` = sample mean, `μ` = reference mean, `s` = sample standard deviation, `n` = sample size)
+
+- **Ví dụ:** một giáo viên có lớp gồm 30 học sinh và muốn kiểm tra average height của lớp có khác `170 cm` hay không.
+
+### Independent t-test: so sánh hai group không liên quan
+
+- **Công thức khi equal variance:** `t = (x̄₁ - x̄₂) / (sₚ × √(1/n₁ + 1/n₂))`
+  (`sₚ` là pooled standard deviation.)
+
+- **Ví dụ:** giáo viên muốn kiểm tra chiều cao trung bình của Lớp A và Lớp B có khác nhau hay không.
+
+### Paired t-test: kiểm định within-pair difference
+
+- **Công thức:** `t = d̄ / (s_d / √n)`
+  (`d̄` = mean paired difference, `s_d` = standard deviation của các difference.)
+
+- **Ví dụ:** đo cân nặng của cùng 20 bệnh nhân trước và sau chương trình ăn kiêng kéo dài tám tuần.
+
+## Chạy cả ba test bằng SciPy
+
+Ví dụ sử dụng synthetic data có random seed và ghép từng data structure với hàm SciPy tương ứng.
+
+```python
+import numpy as np
+from scipy import stats
+
+# Set random seed to generate reproducible dummy data
+np.random.seed(42)
+
+# ==========================================
+# 1. One-Sample T-test
+# ==========================================
+print("--- 1. One-Sample T-test ---")
+
+# Hypothesis: Is the sample mean significantly different from 170?
+sample_heights = np.random.normal(loc=172, scale=5, size=30)
+theoretical_mean = 170
+
+t_stat, p_value = stats.ttest_1samp(sample_heights, theoretical_mean)
+
+print(f"T-statistic: {t_stat:.4f}, p-value: {p_value:.4f}")
+if p_value < 0.05:
+    print("=> Reject Null Hypothesis: The mean is significantly different from 170.\n")
+else:
+    print("=> Fail to Reject Null Hypothesis: No significant difference.\n")
+
+
+# ==========================================
+# 2. Independent Two-Sample T-test
+# ==========================================
+print("--- 2. Independent Two-Sample T-test ---")
+
+# Hypothesis: Are the means of Class A and Class B different?
+class_a_heights = np.random.normal(loc=168, scale=5, size=30)
+class_b_heights = np.random.normal(loc=175, scale=6, size=35)
+
+# By default, ttest_ind assumes equal population variances.
+# Because standard deviations are 5 and 6 (slightly different), we use Welch's t-test by setting equal_var=False
+t_stat, p_value = stats.ttest_ind(class_a_heights, class_b_heights, equal_var=False)
+
+print(f"T-statistic: {t_stat:.4f}, p-value: {p_value:.4f}")
+if p_value < 0.05:
+    print("=> Reject Null Hypothesis: There is a significant difference between Class A and Class B.\n")
+else:
+    print("=> Fail to Reject Null Hypothesis: No significant difference.\n")
+
+
+# ==========================================
+# 3. Paired Sample T-test
+# ==========================================
+print("--- 3. Paired Sample T-test ---")
+
+# Hypothesis: Is there a significant difference in weight before and after the diet?
+weight_before = np.random.normal(loc=85, scale=10, size=20)
+
+# Assume the diet causes an average weight loss of 3kg per person
+weight_after = weight_before - np.random.normal(loc=3, scale=2, size=20)
+
+t_stat, p_value = stats.ttest_rel(weight_before, weight_after)
+
+print(f"T-statistic: {t_stat:.4f}, p-value: {p_value:.4f}")
+if p_value < 0.05:
+    print("=> Reject Null Hypothesis: The weight before and after the diet are significantly different.\n")
+else:
+    print("=> Fail to Reject Null Hypothesis: No significant difference.\n")
+```
+
+## Chọn từ mối quan hệ giữa các observation
+
+- Dùng **one-sample t-test** cho một group so với reference value.
+- Dùng **independent t-test**, ưu tiên Welch's khi equal variance không chắc chắn, cho hai group không liên quan.
+- Dùng **paired t-test** khi cùng subject được đo hai lần hoặc các observation được match rõ ràng.
+
+Pairing hay independence đến từ cách dữ liệu được thu thập. Không thể suy ra điều đó từ hai column sau khi dữ liệu đã được tạo.
+{% endcapture %}
+<article class="reading-page" data-lang="vi">{{ article_vi | markdownify }}</article>

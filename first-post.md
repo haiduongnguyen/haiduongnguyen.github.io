@@ -1,45 +1,69 @@
 ---
-title: How I Label Evidence in Technical Articles
-title_vi: Cách tôi phân loại bằng chứng trong bài kỹ thuật
-title_en: How I label evidence in technical articles
-description: Three evidence levels and four questions used to separate learning notes, reproducible experiments, and production case studies.
-description_vi: Ba mức bằng chứng và bốn câu hỏi để phân biệt ghi chú học tập, thí nghiệm tái lập và case study production.
-description_en: Three evidence levels and four questions used to separate learning notes, reproducible experiments, and production case studies.
+title: "Why This Site Explains Decisions Instead of Listing Skills"
+title_vi: "Vì sao website này giải thích quyết định thay vì liệt kê kỹ năng"
+title_en: "Why This Site Explains Decisions Instead of Listing Skills"
+description: I use this site to record how I approach banking-data and machine-learning problems, including what I learn from real datasets.
+description_vi: Tôi dùng website này để ghi lại cách tiếp cận bài toán dữ liệu ngân hàng và machine learning, cùng những điều học được từ dữ liệu thực tế.
+description_en: I use this site to record how I approach banking-data and machine-learning problems, including what I learn from real datasets.
 date: 2026-01-29
 writing_topic: notes
 permalink: /first-post.html
 ---
 
-<article class="reading-page" data-lang="vi">
-<header class="page-intro">
-<h1>Cách tôi phân loại bằng chứng trong bài kỹ thuật</h1>
-<p>Một kết quả chỉ đáng tin khi người đọc biết dữ liệu đến từ đâu, cách kiểm chứng và giới hạn của kết luận.</p>
-</header>
-<h2>Ba mức bằng chứng</h2>
-<ul>
-<li><strong>Learning note:</strong> cách hiểu của tôi tại thời điểm viết; có thể chưa bao quát hết lý thuyết hoặc trường hợp biên.</li>
-<li><strong>Reproducible experiment:</strong> có dữ liệu mẫu, code, metric và cách chạy đủ để người khác kiểm tra lại.</li>
-<li><strong>Production case study:</strong> mô tả quyết định thực tế, ràng buộc vận hành và kết quả quan sát được; dữ liệu nhạy cảm phải được ẩn danh hoặc thay bằng dữ liệu tổng hợp.</li>
-</ul>
-<h2>Bốn câu hỏi bắt buộc</h2>
-<ol><li>Bài toán và quyết định cần hỗ trợ là gì?</li><li>Baseline nào cần vượt qua?</li><li>Dữ liệu, assumptions hoặc cách đánh giá nào có thể làm kết quả sai?</li><li>Người dùng sẽ hành động thế nào từ đầu ra?</li></ol>
-<h2>Quy tắc sửa lỗi và bảo mật</h2>
-<p>Thay đổi ảnh hưởng tới kết luận phải được ghi lại trong bài. Kết quả thử nghiệm không được trình bày như kết quả production; dữ liệu khách hàng, credential, endpoint nội bộ và chi tiết nhận diện tổ chức không được công bố.</p>
-</article>
+{% capture article_en %}
+# Why This Site Explains Decisions Instead of Listing Skills
 
-<article class="reading-page" data-lang="en">
-<header class="page-intro">
-<h1>How I label evidence in technical articles</h1>
-<p>A result is credible only when readers know where the data came from, how the result was validated, and what limits the conclusion.</p>
-</header>
-<h2>Three evidence levels</h2>
-<ul>
-<li><strong>Learning note:</strong> my understanding at the time of writing; it may not yet cover the full theory or every edge case.</li>
-<li><strong>Reproducible experiment:</strong> sample data, code, metrics, and run instructions are sufficient for another person to check the result.</li>
-<li><strong>Production case study:</strong> the article describes a real decision, operational constraints, and observed outcomes; sensitive data is anonymized or replaced with synthetic data.</li>
-</ul>
-<h2>Four required questions</h2>
-<ol><li>What problem and decision does the work support?</li><li>Which baseline must it beat?</li><li>Which data, assumptions, or evaluation choices could make the result wrong?</li><li>How will a user act on the output?</li></ol>
-<h2>Correction and confidentiality rules</h2>
-<p>Changes that affect a conclusion must be recorded in the article. Experimental results must not be presented as production outcomes; customer data, credentials, internal endpoints, and organization-identifying details must not be published.</p>
-</article>
+A CV can list data analytics, machine learning, or time-series forecasting, but it cannot show how I approach a problem. I created this website to document that reasoning through the work itself.
+
+## Each article should show how I think
+
+The useful parts of a project are usually the decisions behind it:
+
+- How I define the problem before choosing a model.
+- How I work with incomplete or noisy data.
+- Why I choose one method over another.
+- What I learn when the first approach is not enough.
+
+This is why the site includes both concepts I am learning and problems drawn from real data work.
+
+## The topics come from my work and study
+
+I write about:
+
+- Data-analysis projects in banking.
+- Machine-learning foundations such as regression, trees, clustering, and boosting.
+- Time-series forecasting.
+- Lessons from real datasets.
+
+The first longer project on this site follows [anomaly detection in logs and metrics](/anomaly_detection/landing_page.html), from synthetic data and model notes to the scope of my master's thesis.
+{% endcapture %}
+<article class="reading-page" data-lang="en">{{ article_en | markdownify }}</article>
+
+{% capture article_vi %}
+# Vì sao website này giải thích quyết định thay vì liệt kê kỹ năng
+
+CV có thể liệt kê data analytics, machine learning hay time-series forecasting, nhưng không thể hiện được cách tôi tiếp cận một vấn đề. Tôi tạo website này để ghi lại quá trình suy luận đó thông qua chính các công việc đã làm.
+
+## Mỗi bài viết cần thể hiện cách tôi tư duy
+
+Phần hữu ích của một project thường nằm ở những quyết định phía sau nó:
+
+- Tôi định nghĩa vấn đề thế nào trước khi chọn model.
+- Tôi xử lý dữ liệu thiếu hoặc nhiễu ra sao.
+- Vì sao tôi chọn một method thay vì method khác.
+- Tôi học được gì khi cách tiếp cận đầu tiên chưa đủ tốt.
+
+Vì vậy, website có cả những concept tôi đang học và những bài toán đến từ công việc thực tế với dữ liệu.
+
+## Chủ đề đến từ công việc và quá trình học của tôi
+
+Tôi viết về:
+
+- Các project phân tích dữ liệu trong ngân hàng.
+- Nền tảng machine learning như regression, tree, clustering và boosting.
+- Time-series forecasting.
+- Những bài học từ dữ liệu thực tế.
+
+Project dài đầu tiên trên website theo sát bài toán [anomaly detection trong log và metric](/anomaly_detection/landing_page.html), từ synthetic data và model note đến phạm vi luận văn thạc sĩ của tôi.
+{% endcapture %}
+<article class="reading-page" data-lang="vi">{{ article_vi | markdownify }}</article>

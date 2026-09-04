@@ -1,21 +1,59 @@
-﻿---
-title: Anomaly Detection
-title_vi: Phát hiện bất thường
-title_en: Anomaly detection
-description: Rule baselines, Isolation Forest, LOF, synthetic data, and event-level evaluation for multidimensional logs and metrics.
-description_vi: Rule baseline, Isolation Forest, LOF, dữ liệu giả lập và đánh giá theo event cho logs cùng metrics đa chiều.
-description_en: Rule baselines, Isolation Forest, LOF, synthetic data, and event-level evaluation for multidimensional logs and metrics.
+---
+title: "Anomaly Detection: From a Competition to My Master's Thesis"
+title_vi: "Anomaly Detection: từ cuộc thi đến luận văn thạc sĩ"
+title_en: "Anomaly Detection: From a Competition to My Master's Thesis"
+description: A project that began in a 2025 competition and became my multidimensional anomaly-detection thesis at Phenikaa University.
+description_vi: Dự án bắt đầu từ một cuộc thi năm 2025 và trở thành luận văn anomaly detection đa chiều tại Đại học Phenikaa.
+description_en: A project that began in a 2025 competition and became my multidimensional anomaly-detection thesis at Phenikaa University.
 writing_topic: projects
 project_order: 2
 permalink: /anomaly_detection/landing_page.html
 ---
 
-<section class="page-intro" data-lang="vi"><h1>Phát hiện bất thường</h1><p>Chủ đề tôi đang đào sâu cho luận văn thạc sĩ: từ định nghĩa anomaly và tạo dữ liệu kiểm thử đến lựa chọn baseline, đánh giá và vận hành.</p></section>
-<section class="page-intro" data-lang="en"><h1>Anomaly detection</h1><p>The topic I am exploring for my master’s thesis: from anomaly definitions and test-data generation to baselines, evaluation, and operations.</p></section>
+{% capture article_en %}
+🔙 [Back to Home](/)
 
-<div class="card-grid card-grid--two">
-  <article class="card"><h2>Isolation Forest</h2><p data-lang="vi">Cô lập điểm bất thường bằng random partition và path length.</p><p data-lang="en">Isolating anomalies with random partitions and path length.</p><a class="card__link" href="/anomaly_detection/isolation_forest/">Read →</a></article>
-  <article class="card"><h2>Local Outlier Factor</h2><p data-lang="vi">So sánh mật độ cục bộ của một điểm với các điểm lân cận.</p><p data-lang="en">Comparing a point’s local density with that of its neighbors.</p><a class="card__link" href="/anomaly_detection/local_base_outlier_identify/">Read →</a></article>
-  <article class="card"><h2 data-lang="vi">Dữ liệu logs và metrics giả lập</h2><h2 data-lang="en">Synthetic logs and metrics</h2><p data-lang="vi">Hai file JSONL, mỗi file 1.500 record, cung cấp logs, APM metrics và nhãn anomaly để kiểm tra pipeline.</p><p data-lang="en">Two JSONL files with 1,500 records each provide logs, APM metrics, and anomaly labels for pipeline tests.</p><a class="card__link" href="/anomaly_detection/vpbank_hackathon/overall_info/"><span data-lang="vi">Mở dữ liệu và validator →</span><span data-lang="en">Open the data and validator →</span></a></article>
-  <article class="card"><h2 data-lang="vi">Nhật ký luận văn</h2><h2 data-lang="en">Thesis journal</h2><p data-lang="vi">Scope xác định anomaly score theo timestamp và nhóm signal; evaluation dùng incident label, injected anomaly, alert volume và detection delay.</p><p data-lang="en">The scope defines anomaly scores by timestamp and signal group; evaluation uses incident labels, injected anomalies, alert volume, and detection delay.</p><a class="card__link" href="/anomaly_detection/master_thesis/"><span data-lang="vi">Đọc scope và tiêu chí đánh giá →</span><span data-lang="en">Read the scope and evaluation criteria →</span></a></article>
-</div>
+# Anomaly Detection: From a Competition to My Master's Thesis
+
+My project studies how different anomaly-detection algorithms behave on multidimensional data. It began as a competition topic in October 2025 and became the subject of my master's thesis at Phenikaa University in January 2026.
+
+## The project has two stages
+
+- **October 2025 — competition:** I started with application logs and APM metrics, including synthetic data linked through trace and span identifiers.
+- **January 2026 — master's thesis:** I kept the topic and began documenting the scope, model choices, root-cause-analysis question, and implementation milestones.
+
+## Read the project in this order
+
+1. [Inspect the synthetic logs and metrics dataset](/anomaly_detection/vpbank_hackathon/overall_info/).
+2. [Understand why Isolation Forest isolates anomalies early](/anomaly_detection/isolation_forest/).
+3. [Compare local density with Local Outlier Factor](/anomaly_detection/local_base_outlier_identify/).
+4. [Read the rule I use when working with ChatGPT on my thesis](/anomaly_detection/master_thesis/).
+5. [See how I reduced the first coding milestone](/anomaly-detection/thesis/first-assignment/).
+
+The journal records the decisions in sequence so later results can be compared with the scope defined before implementation.
+{% endcapture %}
+<article class="reading-page" data-lang="en">{{ article_en | markdownify }}</article>
+
+{% capture article_vi %}
+🔙 [Quay lại trang chủ](/)
+
+# Anomaly Detection: từ cuộc thi đến luận văn thạc sĩ
+
+Dự án của tôi nghiên cứu cách các thuật toán anomaly detection khác nhau hoạt động trên dữ liệu đa chiều. Dự án bắt đầu từ một đề tài thi vào tháng 10/2025 và trở thành chủ đề luận văn thạc sĩ của tôi tại Đại học Phenikaa vào tháng 1/2026.
+
+## Dự án có hai giai đoạn
+
+- **Tháng 10/2025 — cuộc thi:** tôi bắt đầu với application logs và APM metrics, gồm dữ liệu giả lập được liên kết bằng trace ID và span ID.
+- **Tháng 1/2026 — luận văn thạc sĩ:** tôi giữ lại chủ đề này và bắt đầu ghi chép về scope, lựa chọn model, câu hỏi root-cause analysis và các milestone triển khai.
+
+## Đọc dự án theo thứ tự này
+
+1. [Xem bộ dữ liệu logs và metrics giả lập](/anomaly_detection/vpbank_hackathon/overall_info/).
+2. [Hiểu vì sao Isolation Forest cô lập anomaly sớm](/anomaly_detection/isolation_forest/).
+3. [So sánh mật độ cục bộ bằng Local Outlier Factor](/anomaly_detection/local_base_outlier_identify/).
+4. [Đọc nguyên tắc tôi dùng khi làm luận văn với ChatGPT](/anomaly_detection/master_thesis/).
+5. [Xem cách tôi thu hẹp milestone code đầu tiên](/anomaly-detection/thesis/first-assignment/).
+
+Nhật ký ghi lại các quyết định theo trình tự để kết quả sau này có thể được so sánh với scope đã xác định trước khi triển khai.
+{% endcapture %}
+<article class="reading-page" data-lang="vi">{{ article_vi | markdownify }}</article>

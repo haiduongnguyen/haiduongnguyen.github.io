@@ -1,150 +1,675 @@
-﻿---
-title: Linear Regression
-title_vi: Linear Regression — từ baseline đến chẩn đoán
-title_en: Linear regression — from baseline to diagnostics
-description: OLS estimation, time-aware validation, residual diagnostics, VIF, and coefficient stability for linear regression.
-description_vi: OLS estimation, time-aware validation, residual diagnostics, VIF và coefficient stability cho linear regression.
-description_en: OLS estimation, time-aware validation, residual diagnostics, VIF, and coefficient stability for linear regression.
+---
+title: "Linear Regression: Two Solvers and the Checks After Fitting"
+title_vi: "Linear Regression: hai cách giải và các kiểm tra sau khi fit"
+title_en: "Linear Regression: Two Solvers and the Checks After Fitting"
+description: Build linear regression with gradient descent and matrix operations, then inspect residuals and multicollinearity.
+description_vi: Xây dựng linear regression bằng gradient descent và matrix operations, sau đó kiểm tra residual và multicollinearity.
+description_en: Build linear regression with gradient descent and matrix operations, then inspect residuals and multicollinearity.
 date: 2026-04-08
 writing_topic: foundations
 ---
 
-<article class="reading-page" data-lang="vi">
-  <header class="page-intro"><h1>Linear Regression</h1><p>Một baseline đơn giản nhưng mạnh: mô hình hóa kỳ vọng của target như tổ hợp tuyến tính của các feature.</p></header>
-  <h2>Mô hình</h2><pre><code>ŷ = β₀ + β₁x₁ + ... + βₚxₚ</code></pre><p>Ordinary Least Squares chọn hệ số làm nhỏ nhất tổng bình phương residual. Hệ số <code>βⱼ</code> mô tả thay đổi kỳ vọng của target khi <code>xⱼ</code> tăng một đơn vị, trong điều kiện các feature khác giữ nguyên.</p>
-  <h2>Hai cách tìm hệ số</h2><ul><li><strong>Closed form / numerical linear algebra:</strong> phù hợp với dữ liệu vừa phải; implementation thực tế thường dùng SVD hoặc least-squares solver thay vì tự nghịch đảo ma trận.</li><li><strong>Gradient descent:</strong> hữu ích khi dữ liệu lớn hoặc là một phần của pipeline tối ưu rộng hơn.</li></ul>
-  <h2>Assumptions cần kiểm tra</h2><ul><li><strong>Linearity:</strong> quan hệ kỳ vọng giữa feature và target được mô hình hóa hợp lý.</li><li><strong>Independent errors:</strong> đặc biệt quan trọng với dữ liệu theo thời gian hoặc theo nhóm.</li><li><strong>Homoscedasticity:</strong> phương sai residual tương đối ổn định nếu cần standard error cổ điển.</li><li><strong>Low multicollinearity:</strong> feature gần tuyến tính với nhau làm hệ số thiếu ổn định.</li><li><strong>Normal errors:</strong> chủ yếu cần cho inference mẫu nhỏ, không phải điều kiện để OLS tìm được hệ số.</li></ul>
-  <h2>Workflow thực tế</h2><ol class="process"><li>Tách train/test đúng theo cấu trúc thời gian hoặc entity.</li><li>So sánh với baseline như mean hoặc last-period value.</li><li>Fit pipeline xử lý missing, encoding và scaling nếu cần.</li><li>Đánh giá MAE/RMSE cùng residual plot.</li><li>Kiểm tra drift, outlier ảnh hưởng mạnh và coefficient stability.</li><li>Chỉ diễn giải hệ số trong phạm vi assumptions và thiết kế dữ liệu.</li></ol>
-  <h2>Python</h2><pre><code>from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_absolute_error
+{% capture article_en %}
+🔙 [Back to Home](/)
 
-model = LinearRegression().fit(X_train, y_train)
-prediction = model.predict(X_test)
-mae = mean_absolute_error(y_test, prediction)</code></pre>
-  <div class="callout"><p><strong>Điểm tách khỏi PCA:</strong> PCA có thể giảm chiều hoặc xử lý collinearity, nhưng làm coefficient khó diễn giải hơn. Nó là một bước modeling riêng, không phải một phần mặc định của linear regression.</p></div>
-  <h2>Gradient, numerical stability và validation quyết định độ tin cậy</h2>
-  <h3>Gradient của MSE phải khớp với định nghĩa loss</h3>
-  <p>Với mean squared error thông thường, đạo hàm chứa hệ số hai. Hệ số này có thể được hấp thụ vào learning rate, nhưng giữ nhất quán giữa loss và derivative giúp debug và gradient checking dễ hơn.</p>
-  <pre><code class="language-python">import numpy as np
+# Linear Regression: Two Solvers and the Checks After Fitting
 
-def mse_gradient(X, y, weights, intercept):
-    error = X @ weights + intercept - y
-    grad_weights = (2.0 / len(y)) * X.T @ error
-    grad_intercept = 2.0 * error.mean()
-    return grad_weights, grad_intercept</code></pre>
-  <h3>Không nghịch đảo ma trận nếu bài toán không thực sự cần ma trận nghịch đảo</h3>
-  <p>Normal equation hữu ích để hiểu OLS, nhưng <code>np.linalg.inv(X.T @ X)</code> thiếu ổn định khi các feature cộng tuyến và thực hiện nhiều phép tính hơn cần thiết. Nên dùng <code>np.linalg.lstsq</code>, solver dựa trên QR/SVD hoặc implementation đã được duy trì. Ridge regression là một lựa chọn modeling chứ không chỉ là mẹo số học, vì penalty của Ridge thay đổi chính objective được tối ưu.</p>
-  <h3>Một baseline hoàn chỉnh và tôn trọng thứ tự thời gian</h3>
-  <p>Ví dụ này nhỏ, tái lập được và không đọc dữ liệu tương lai. Model học trên 75% quan sát đầu, đánh giá trên 25% quan sát sau và được so sánh với baseline dùng trung bình tập train. Với dữ liệu theo khách hàng, cần dùng group-aware split để một khách hàng không xuất hiện ở cả train lẫn test.</p>
-  <pre><code class="language-python">import numpy as np
+Linear regression is useful for more than predicting a continuous value. Its coefficients also describe how the expected outcome changes with the input variables—but that interpretation is only reliable after checking whether the model assumptions are reasonable.
 
-rng = np.random.default_rng(42)
-n_rows = 240
-month = np.arange(n_rows)
-income = rng.normal(30_000, 6_000, n_rows)
-interest_rate = 5.0 + 0.4 * np.sin(month / 12)
-X = np.column_stack([income, interest_rate, month])
-y = 0.18 * income - 420 * interest_rate + 8 * month + rng.normal(0, 900, n_rows)
+## One model, from one feature to polynomial features
 
-split = 180
-X_train, X_test = X[:split], X[split:]
-y_train, y_test = y[:split], y[split:]
+![image.png](images/1.png)
 
-# Mọi thống kê preprocessing chỉ được học từ giai đoạn train.
-train_median = np.nanmedian(X_train, axis=0)
-X_train = np.where(np.isnan(X_train), train_median, X_train)
-X_test = np.where(np.isnan(X_test), train_median, X_test)
-train_mean = X_train.mean(axis=0)
-train_std = X_train.std(axis=0)
-X_train = (X_train - train_mean) / train_std
-X_test = (X_test - train_mean) / train_std
+- One input variable:
 
-X_train_design = np.column_stack([np.ones(len(X_train)), X_train])
-X_test_design = np.column_stack([np.ones(len(X_test)), X_test])
-coefficients, *_ = np.linalg.lstsq(X_train_design, y_train, rcond=None)
-prediction = X_test_design @ coefficients
-baseline = np.full_like(y_test, y_train.mean())
+    y = w*x + b
 
-mae = lambda actual, forecast: np.mean(np.abs(actual - forecast))
-rmse = lambda actual, forecast: np.sqrt(np.mean((actual - forecast) ** 2))
-print("model MAE:", mae(y_test, prediction))
-print("baseline MAE:", mae(y_test, baseline))
-print("model RMSE:", rmse(y_test, prediction))</code></pre>
-  <h3>Prediction và inference là hai công việc khác nhau</h3>
-  <p>Nếu mục tiêu là dự báo, hãy ưu tiên out-of-sample error, ngăn leakage, theo dõi drift và so với baseline hữu ích. Nếu mục tiêu là suy luận, sampling design, sai số có cấu trúc theo nhóm/thời gian, confidence interval và model specification trở nên quan trọng. Test RMSE thấp không biến một coefficient thành quan hệ nhân quả.</p>
-  <h3>Dùng VIF như tín hiệu chẩn đoán, không phải phán quyết</h3>
-  <p>Các ngưỡng VIF &gt; 5 hay VIF &gt; 10 chỉ là heuristic. VIF cao cảnh báo coefficient riêng lẻ có thể thiếu ổn định; nó không tự động có nghĩa model dự báo kém hoặc feature bắt buộc phải bị loại. Hãy kiểm tra độ ổn định của coefficient qua nhiều fold và xác định rõ mục tiêu là diễn giải hay dự báo.</p>
-  <h3>Những gì nên được log trong một thử nghiệm ngân hàng</h3>
-  <ul><li>Mốc train/test hoặc cách chia nhóm khách hàng chính xác.</li><li>Metric của naive baseline và model trên cùng tập quan sát.</li><li>Cách xử lý missing và danh sách feature thực sự có tại thời điểm ra quyết định.</li><li>Residual error theo phân khúc khách hàng và giai đoạn lịch.</li><li>Độ ổn định của coefficient thay vì chỉ lưu một bảng hệ số duy nhất.</li></ul>
-  <h2>Nguồn</h2><ul><li><a href="https://scikit-learn.org/stable/modules/linear_model.html#ordinary-least-squares">Scikit-learn: Ordinary Least Squares</a></li><li><a href="https://www.statsmodels.org/stable/regression.html">Statsmodels: Regression and Linear Models</a></li></ul>
-</article>
+- Multiple input variables:
 
-<article class="reading-page" data-lang="en">
-  <header class="page-intro"><h1>Linear regression</h1><p>A simple but strong baseline that models the expected target as a linear combination of features.</p></header>
-  <h2>The model</h2><pre><code>ŷ = β₀ + β₁x₁ + ... + βₚxₚ</code></pre><p>Ordinary Least Squares chooses coefficients that minimize the sum of squared residuals. A coefficient <code>βⱼ</code> represents the expected target change for a one-unit increase in <code>xⱼ</code>, holding the other features fixed.</p>
-  <h2>Two ways to estimate coefficients</h2><ul><li><strong>Closed form / numerical linear algebra:</strong> suitable for moderate data; production implementations generally use SVD or least-squares solvers rather than explicitly inverting a matrix.</li><li><strong>Gradient descent:</strong> useful for large data or when regression sits inside a broader optimization pipeline.</li></ul>
-  <h2>Assumptions to examine</h2><ul><li><strong>Linearity:</strong> the conditional mean is represented adequately.</li><li><strong>Independent errors:</strong> especially important for time- or group-structured data.</li><li><strong>Homoscedasticity:</strong> stable residual variance when using classical standard errors.</li><li><strong>Low multicollinearity:</strong> near-linear feature relationships make coefficients unstable.</li><li><strong>Normal errors:</strong> mainly relevant to small-sample inference, not to computing OLS coefficients.</li></ul>
-  <h2>Practical workflow</h2><ol class="process"><li>Split data according to time or entity structure.</li><li>Compare against a mean or last-period baseline.</li><li>Fit a pipeline for missing values, encoding, and scaling where needed.</li><li>Evaluate MAE/RMSE and residual plots together.</li><li>Check drift, influential outliers, and coefficient stability.</li><li>Interpret coefficients only within the data design and assumptions.</li></ol>
-  <h2>Python</h2><pre><code>from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_absolute_error
+    y = w1*x1 + w2*x2 + … + wn*xn + b
 
-model = LinearRegression().fit(X_train, y_train)
-prediction = model.predict(X_test)
-mae = mean_absolute_error(y_test, prediction)</code></pre>
-  <div class="callout"><p><strong>Keep PCA separate:</strong> PCA can reduce dimensionality or address collinearity, but it makes coefficients harder to interpret. It is a separate modeling choice, not part of linear regression by default.</p></div>
-  <h2>Gradients, numerical stability, and validation determine reliability</h2>
-  <h3>The MSE gradient needs to match the loss definition</h3>
-  <p>For plain mean squared error, the derivative contains a factor of two. That factor can be absorbed into the learning rate, but keeping the loss and derivative consistent makes debugging and gradient checking easier.</p>
-  <pre><code class="language-python">import numpy as np
+- Polynomial terms treated as engineered input features:
 
-def mse_gradient(X, y, weights, intercept):
-    error = X @ weights + intercept - y
-    grad_weights = (2.0 / len(y)) * X.T @ error
-    grad_intercept = 2.0 * error.mean()
-    return grad_weights, grad_intercept</code></pre>
-  <h3>Do not compute a matrix inverse unless you need the inverse itself</h3>
-  <p>The normal equation is useful for understanding OLS, but <code>np.linalg.inv(X.T @ X)</code> is fragile when features are collinear and does more work than necessary. Use <code>np.linalg.lstsq</code>, a QR/SVD-based solver, or a maintained library implementation. Ridge regression is a modeling decision—not merely a numerical trick—because its penalty changes the fitted objective.</p>
-  <h3>A complete baseline that respects time order</h3>
-  <p>This example is deliberately small and reproducible. It trains on the first 75% of observations, evaluates on the later 25%, and compares the model with a train-mean baseline. For customer-level data, use a group-aware split instead so the same customer cannot appear in both train and test sets.</p>
-  <pre><code class="language-python">import numpy as np
+    y = w1*x1 + w2*x1^2 + … + b
 
-rng = np.random.default_rng(42)
-n_rows = 240
-month = np.arange(n_rows)
-income = rng.normal(30_000, 6_000, n_rows)
-interest_rate = 5.0 + 0.4 * np.sin(month / 12)
-X = np.column_stack([income, interest_rate, month])
-y = 0.18 * income - 420 * interest_rate + 8 * month + rng.normal(0, 900, n_rows)
+## Use it for prediction or for understanding relationships
 
-split = 180
-X_train, X_test = X[:split], X[split:]
-y_train, y_test = y[:split], y[split:]
+- Predict a continuous output such as house price, stock value, or credit score.
+- Examine a relationship, such as whether a higher interest rate is associated with a higher total savings-book balance.
 
-# Learn every preprocessing statistic from the training period only.
-train_median = np.nanmedian(X_train, axis=0)
-X_train = np.where(np.isnan(X_train), train_median, X_train)
-X_test = np.where(np.isnan(X_test), train_median, X_test)
-train_mean = X_train.mean(axis=0)
-train_std = X_train.std(axis=0)
-X_train = (X_train - train_mean) / train_std
-X_test = (X_test - train_mean) / train_std
+## Fit the same model in two ways
 
-X_train_design = np.column_stack([np.ones(len(X_train)), X_train])
-X_test_design = np.column_stack([np.ones(len(X_test)), X_test])
-coefficients, *_ = np.linalg.lstsq(X_train_design, y_train, rcond=None)
-prediction = X_test_design @ coefficients
-baseline = np.full_like(y_test, y_train.mean())
+Given `x` and `y`, the coefficients can be estimated iteratively with gradient descent or directly with matrix operations. Implementing both makes the difference between optimization and a closed-form solution concrete.
 
-mae = lambda actual, forecast: np.mean(np.abs(actual - forecast))
-rmse = lambda actual, forecast: np.sqrt(np.mean((actual - forecast) ** 2))
-print("model MAE:", mae(y_test, prediction))
-print("baseline MAE:", mae(y_test, baseline))
-print("model RMSE:", rmse(y_test, prediction))</code></pre>
-  <h3>Prediction and inference are different jobs</h3>
-  <p>If the goal is prediction, prioritize out-of-sample error, leakage prevention, drift, and a useful baseline. If the goal is inference, the sampling design, clustered or time-dependent errors, confidence intervals, and model specification matter. A low test RMSE does not turn a coefficient into a causal effect.</p>
-  <h3>Use VIF as a diagnostic, not a verdict</h3>
-  <p>Thresholds such as VIF &gt; 5 or VIF &gt; 10 are heuristics. A high VIF warns that individual coefficients may be unstable; it does not automatically mean the model predicts poorly or that a feature must be removed. Check coefficient stability across folds and decide whether interpretation or prediction is the actual goal.</p>
-  <h3>What I would log in a real banking experiment</h3>
-  <ul><li>The exact train/test cutoff or customer-group split.</li><li>The naive baseline and model metrics on the same rows.</li><li>Missing-value policy and features unavailable at decision time.</li><li>Residual error by customer segment and calendar period.</li><li>Coefficient stability, not only one fitted coefficient table.</li></ul>
-  <h2>Sources</h2><ul><li><a href="https://scikit-learn.org/stable/modules/linear_model.html#ordinary-least-squares">Scikit-learn: Ordinary Least Squares</a></li><li><a href="https://www.statsmodels.org/stable/regression.html">Statsmodels: Regression and Linear Models</a></li></ul>
-</article>
+- Gradient descent
+- Matrix
+
+## Gradient descent updates the slope and intercept iteratively
+
+### Step 1: Initialize `w` and `b`
+
+```python
+# initialize w
+
+w_init = -0.01
+w_init
+
+# initialize b
+
+b_init = 46
+b_init
+
+learning_rate = 0.0000001
+loss_history = []
+w_history = []
+b_history = []
+```
+
+### Step 2: Calculate mean squared error
+
+```
+def calculate_mse(y_pred, y):
+    mse = 0
+    for i in range(len(y)):
+        mse += ((y_pred[i] - y[i])**2)/len(y)
+
+    return mse
+```
+
+### Step 3: Calculate the gradients
+
+```python
+def grad_y_by_w(w, b, x, y):
+    tot_grad = 0
+    for ele in range(len(x)):
+        tot_grad += (1/len(x))*(w*x[ele] + b - y[ele])*x[ele]
+    return tot_grad
+
+def grad_y_by_b(w, b, x, y):
+    tot_grad = 0
+    for ele in range(len(x)):
+        tot_grad += (1/len(x))*(w*x[ele] + b - y[ele])
+    return tot_grad
+
+```
+
+### Step 4: Update `w` and `b` over multiple epochs
+
+```python
+for epoch in range(30):
+    print("================================")
+    print(f"Run for epoch {epoch}")
+
+    if epoch == 0:
+        w = w_init
+        b = b_init
+        y_pred = w*x + b
+
+    if epoch >= 1:
+        grad_l_by_w = grad_y_by_w(w, b, x, y)
+        grad_l_by_b = grad_y_by_b(w, b, x, y)
+        print(grad_l_by_w)
+        print(grad_l_by_b)
+
+        w = w - learning_rate*grad_l_by_w
+        b = b - learning_rate*grad_l_by_b
+
+        print("w: ", w)
+        print("b: ", b)
+
+        y_pred = w*x + b
+
+
+    loss = calculate_mse(y_pred, y)
+    # print(loss)
+    loss_history.append(loss)
+    print("Loss: ", loss)
+    w_history.append(w)
+    b_history.append(b)
+
+```
+
+### Step 5: Compare with scikit-learn
+
+```python
+import numpy as np
+from sklearn.linear_model import LinearRegression, SGDRegressor
+
+# data
+X = np.array([[1], [2], [3], [4], [5]], dtype=float)
+y = np.array([1.2, 1.9, 3.2, 3.9, 5.1])
+
+# exact OLS
+lr = LinearRegression().fit(X, y)
+print("LinearRegression coef:", lr.coef_, "intercept:", lr.intercept_)
+
+# gradient descent version
+sgd = SGDRegressor(max_iter=10000, eta0=0.01, learning_rate='constant').fit(X, y)
+print("SGDRegressor coef:", sgd.coef_, "intercept:", sgd.intercept_)
+
+```
+
+## Matrix operations give a direct solution
+
+![image.png](images/2.png)
+
+![image.png](images/3.png)
+
+The following notebook snippets calculate the intercept and slope from the design matrix and from centered variables.
+
+```python
+n = len(x)
+x_temp = np.concatenate([np.ones((n, 1)), np.reshape(x, (n,1))], axis=1)
+
+x_temp
+
+w_temp = np.linalg.inv((x_temp.T) @ x_temp) @ (x_temp.T) @ y
+
+w_temp
+
+b = w_temp[0]
+w = w_temp[1]
+```
+
+```python
+ymean = y.mean()
+
+xmean = x.mean()
+
+ymean
+
+yoffset = y - ymean
+xoffset = x - xmean
+
+yoffset
+
+w = (xoffset.T @ yoffset) / (xoffset.T @ xoffset)
+
+w
+
+b = ymean - xmean*w
+b
+```
+
+The first form follows the normal equation directly. In production code, `np.linalg.lstsq` is preferable to explicitly calculating a matrix inverse, especially when predictors are close to linearly dependent.
+
+## Benchmark iterative and direct solvers
+
+```python
+import time
+import numpy as np
+from sklearn.linear_model import LinearRegression, SGDRegressor
+
+def benchmark(n_samples, n_features):
+    X = np.random.randn(n_samples, n_features)
+    y = np.random.randn(n_samples)
+
+    # LinearRegression
+    start = time.time()
+    try:
+        LinearRegression().fit(X, y)
+        lr_time = time.time() - start
+    except Exception as e:
+        lr_time = str(e)
+
+    # SGDRegressor
+    start = time.time()
+    SGDRegressor(max_iter=1000).fit(X, y)
+    sgd_time = time.time() - start
+
+    return lr_time, sgd_time
+
+sizes = [(1000, 1000), (2000, 2000), (5000, 5000), (10000, 1000), (1000, 10000)]
+for n, d in sizes:
+    print(f"n={n}, d={d}:", benchmark(n, d))
+
+```
+
+The larger cases in this benchmark allocate dense matrices and can require substantial memory; they should be run individually rather than treated as a lightweight example.
+
+## Check the assumptions after fitting
+
+The fitted coefficients and predictions are not the end of the analysis. The residuals help show whether the linear model is a reasonable description of the data.
+
+| Assumption | How to check it | Tool |
+| --- | --- | --- |
+| Linearity | Plot residuals against fitted values | `sns.residplot()` |
+| Independent errors | Check serial correlation; Durbin–Watson is useful for ordered or time-series data | `durbin_watson()` |
+| Constant variance | Inspect residuals versus fitted values or run a Breusch–Pagan test | `statsmodels` |
+| Approximately normal residuals | Use a Q–Q plot, histogram, or Shapiro–Wilk test | `shapiro()`, `qqplot()` |
+| No severe multicollinearity | Calculate the Variance Inflation Factor | `variance_inflation_factor()` |
+
+### Inspect the residual distribution visually
+
+For the Shapiro–Wilk test:
+
+- `H₀`: the residuals follow a normal distribution.
+- If `p < 0.05`, reject `H₀`.
+
+With a large sample, even a small departure from normality can produce a very small p-value. A Q–Q plot and histogram show whether that departure is material rather than merely detectable.
+
+Q–Q plot:
+
+```python
+import statsmodels.api as sm
+import matplotlib.pyplot as plt
+
+sm.qqplot(np.array(resid), line='45', fit=True)
+plt.show()
+```
+
+Histogram:
+
+```python
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+sns.histplot(resid, kde=True)
+plt.show()
+```
+
+## VIF exposes predictors that repeat the same information
+
+To calculate the VIF for feature `Xᵢ`, regress it on the remaining predictors and use the resulting `Rᵢ²`:
+
+`VIF_i = 1 / (1 - R_i²)`
+
+A VIF above 5 corresponds to `Rᵢ² > 0.8` and is a signal to inspect the feature. It is a diagnostic threshold, not an automatic instruction to delete the variable.
+
+```python
+import pandas as pd
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+from statsmodels.tools.tools import add_constant
+
+# X is a DataFrame containing the predictors
+X = add_constant(x)
+
+vif_data = pd.DataFrame()
+vif_data["feature"] = X.columns
+vif_data["VIF"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
+
+print(vif_data)
+```
+
+![VIF output](images/4.png)
+
+## Three responses to multicollinearity
+
+When several predictors carry overlapping information, there are three practical options:
+
+1. Remove predictors that duplicate information already represented elsewhere.
+2. Combine correlated predictors, for example with Principal Component Analysis.
+3. Use regularization such as Ridge or Lasso.
+
+The choice depends on the goal. Removing or combining features changes interpretation; regularization keeps the model predictive while shrinking unstable coefficients.
+
+## PCA keeps directions with the most variance
+
+For a square matrix `A`, an eigenvector `v` and eigenvalue `λ` satisfy:
+
+`Av = λv`
+
+Multiplying `v` by `A` changes its scale by `λ` without changing its direction.
+
+In PCA, `A` is the covariance matrix. Each eigenvalue measures how much variance is retained along its corresponding eigenvector. Sorting eigenvalues from largest to smallest ranks the principal-component directions by the information they retain.
+
+The explained-variance ratio is used to select the first `k` components—for example, enough components to retain 95% of the variance.
+
+![Explained variance ratio](images/5.png)
+
+An `n × n` covariance matrix has `n` eigenvalue–eigenvector pairs:
+
+![Eigenvalue and eigenvector calculation](images/6.png)
+
+Placing the selected eigenvectors into a projection matrix transforms the original `m` features into `k` principal components. This reduces dimension, but the new components are combinations of the original variables and are therefore less direct to interpret.
+
+## Ridge and Lasso keep the predictors but penalize coefficients
+
+Ridge adds an L2 penalty and shrinks correlated coefficients. Lasso adds an L1 penalty and can reduce some coefficients to exactly zero.
+
+![Regularization overview](images/7.png)
+
+![Lasso and Ridge comparison](images/8.png)
+
+### Ridge solution
+
+![Ridge objective](images/9.png)
+
+![Ridge solution](images/10.png)
+
+### Lasso solution
+
+![Lasso solution](images/11.png)
+{% endcapture %}
+<article class="reading-page" data-lang="en">{{ article_en | markdownify }}</article>
+
+{% capture article_vi %}
+🔙 [Quay lại trang chủ](/)
+
+# Linear Regression: hai cách giải và các kiểm tra sau khi fit
+
+Linear regression không chỉ dùng để dự báo một giá trị liên tục. Các coefficient còn mô tả expected outcome thay đổi thế nào theo input variable—nhưng cách diễn giải đó chỉ đáng tin sau khi kiểm tra các assumption của mô hình có hợp lý hay không.
+
+## Một mô hình, từ một feature đến polynomial features
+
+![Linear regression](images/1.png)
+
+- Một input variable:
+
+    y = w*x + b
+
+- Nhiều input variable:
+
+    y = w1*x1 + w2*x2 + … + wn*xn + b
+
+- Polynomial term được xem như input feature mới tạo bằng feature engineering:
+
+    y = w1*x1 + w2*x1^2 + … + b
+
+## Dùng cho prediction hoặc để hiểu mối quan hệ
+
+- Dự báo output liên tục như giá nhà, giá cổ phiếu hoặc credit score.
+- Kiểm tra một mối quan hệ, chẳng hạn lãi suất cao hơn có liên hệ với tổng số dư sổ tiết kiệm cao hơn hay không.
+
+## Fit cùng một mô hình theo hai cách
+
+Với `x` và `y`, các coefficient có thể được ước lượng theo cách lặp bằng gradient descent hoặc giải trực tiếp bằng matrix operations. Tự triển khai cả hai giúp nhìn rõ khác biệt giữa optimization và closed-form solution.
+
+## Gradient descent cập nhật slope và intercept theo từng vòng lặp
+
+### Bước 1: Khởi tạo `w` và `b`
+
+```python
+# initialize w
+
+w_init = -0.01
+w_init
+
+# initialize b
+
+b_init = 46
+b_init
+
+learning_rate = 0.0000001
+loss_history = []
+w_history = []
+b_history = []
+```
+
+### Bước 2: Tính mean squared error
+
+```
+def calculate_mse(y_pred, y):
+    mse = 0
+    for i in range(len(y)):
+        mse += ((y_pred[i] - y[i])**2)/len(y)
+
+    return mse
+```
+
+### Bước 3: Tính gradient
+
+```python
+def grad_y_by_w(w, b, x, y):
+    tot_grad = 0
+    for ele in range(len(x)):
+        tot_grad += (1/len(x))*(w*x[ele] + b - y[ele])*x[ele]
+    return tot_grad
+
+def grad_y_by_b(w, b, x, y):
+    tot_grad = 0
+    for ele in range(len(x)):
+        tot_grad += (1/len(x))*(w*x[ele] + b - y[ele])
+    return tot_grad
+
+```
+
+### Bước 4: Cập nhật `w` và `b` qua nhiều epoch
+
+```python
+for epoch in range(30):
+    print("================================")
+    print(f"Run for epoch {epoch}")
+
+    if epoch == 0:
+        w = w_init
+        b = b_init
+        y_pred = w*x + b
+
+    if epoch >= 1:
+        grad_l_by_w = grad_y_by_w(w, b, x, y)
+        grad_l_by_b = grad_y_by_b(w, b, x, y)
+        print(grad_l_by_w)
+        print(grad_l_by_b)
+
+        w = w - learning_rate*grad_l_by_w
+        b = b - learning_rate*grad_l_by_b
+
+        print("w: ", w)
+        print("b: ", b)
+
+        y_pred = w*x + b
+
+
+    loss = calculate_mse(y_pred, y)
+    # print(loss)
+    loss_history.append(loss)
+    print("Loss: ", loss)
+    w_history.append(w)
+    b_history.append(b)
+
+```
+
+### Bước 5: So sánh với scikit-learn
+
+```python
+import numpy as np
+from sklearn.linear_model import LinearRegression, SGDRegressor
+
+# data
+X = np.array([[1], [2], [3], [4], [5]], dtype=float)
+y = np.array([1.2, 1.9, 3.2, 3.9, 5.1])
+
+# exact OLS
+lr = LinearRegression().fit(X, y)
+print("LinearRegression coef:", lr.coef_, "intercept:", lr.intercept_)
+
+# gradient descent version
+sgd = SGDRegressor(max_iter=10000, eta0=0.01, learning_rate='constant').fit(X, y)
+print("SGDRegressor coef:", sgd.coef_, "intercept:", sgd.intercept_)
+
+```
+
+## Matrix operations cho nghiệm trực tiếp
+
+![Normal equation](images/2.png)
+
+![Matrix calculation](images/3.png)
+
+Các notebook snippet dưới đây tính intercept và slope từ design matrix và từ các biến đã centered.
+
+```python
+n = len(x)
+x_temp = np.concatenate([np.ones((n, 1)), np.reshape(x, (n,1))], axis=1)
+
+x_temp
+
+w_temp = np.linalg.inv((x_temp.T) @ x_temp) @ (x_temp.T) @ y
+
+w_temp
+
+b = w_temp[0]
+w = w_temp[1]
+```
+
+```python
+ymean = y.mean()
+
+xmean = x.mean()
+
+ymean
+
+yoffset = y - ymean
+xoffset = x - xmean
+
+yoffset
+
+w = (xoffset.T @ yoffset) / (xoffset.T @ xoffset)
+
+w
+
+b = ymean - xmean*w
+b
+```
+
+Cách đầu tiên đi trực tiếp theo normal equation. Trong production code, `np.linalg.lstsq` phù hợp hơn việc tính matrix inverse, đặc biệt khi các predictor gần linearly dependent.
+
+## Benchmark iterative solver và direct solver
+
+```python
+import time
+import numpy as np
+from sklearn.linear_model import LinearRegression, SGDRegressor
+
+def benchmark(n_samples, n_features):
+    X = np.random.randn(n_samples, n_features)
+    y = np.random.randn(n_samples)
+
+    # LinearRegression
+    start = time.time()
+    try:
+        LinearRegression().fit(X, y)
+        lr_time = time.time() - start
+    except Exception as e:
+        lr_time = str(e)
+
+    # SGDRegressor
+    start = time.time()
+    SGDRegressor(max_iter=1000).fit(X, y)
+    sgd_time = time.time() - start
+
+    return lr_time, sgd_time
+
+sizes = [(1000, 1000), (2000, 2000), (5000, 5000), (10000, 1000), (1000, 10000)]
+for n, d in sizes:
+    print(f"n={n}, d={d}:", benchmark(n, d))
+
+```
+
+Các trường hợp lớn trong benchmark tạo dense matrix và có thể cần nhiều memory; nên chạy riêng từng trường hợp thay vì xem đây là một ví dụ nhẹ.
+
+## Kiểm tra assumption sau khi fit
+
+Coefficient và prediction chưa phải điểm kết thúc. Residual giúp kiểm tra linear model có mô tả dữ liệu hợp lý hay không.
+
+| Assumption | Cách kiểm tra | Tool |
+| --- | --- | --- |
+| Linearity | Vẽ residual theo fitted value | `sns.residplot()` |
+| Error độc lập | Kiểm tra serial correlation; Durbin–Watson hữu ích cho dữ liệu có thứ tự hoặc time series | `durbin_watson()` |
+| Phương sai không đổi | Xem residual theo fitted value hoặc chạy Breusch–Pagan test | `statsmodels` |
+| Residual gần phân phối chuẩn | Dùng Q–Q plot, histogram hoặc Shapiro–Wilk test | `shapiro()`, `qqplot()` |
+| Không có multicollinearity nghiêm trọng | Tính Variance Inflation Factor | `variance_inflation_factor()` |
+
+### Kiểm tra trực quan phân phối residual
+
+Với Shapiro–Wilk test:
+
+- `H₀`: residual tuân theo phân phối chuẩn.
+- Nếu `p < 0.05`, bác bỏ `H₀`.
+
+Khi sample lớn, chỉ một sai lệch nhỏ khỏi phân phối chuẩn cũng có thể tạo p-value rất nhỏ. Q–Q plot và histogram giúp phân biệt sai lệch thực sự đáng kể với sai lệch chỉ có thể phát hiện về mặt thống kê.
+
+Q–Q plot:
+
+```python
+import statsmodels.api as sm
+import matplotlib.pyplot as plt
+
+sm.qqplot(np.array(resid), line='45', fit=True)
+plt.show()
+```
+
+Histogram:
+
+```python
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+sns.histplot(resid, kde=True)
+plt.show()
+```
+
+## VIF phát hiện các predictor lặp lại cùng một thông tin
+
+Để tính VIF cho feature `Xᵢ`, regress nó theo các predictor còn lại và dùng `Rᵢ²` thu được:
+
+`VIF_i = 1 / (1 - R_i²)`
+
+VIF lớn hơn 5 tương ứng với `Rᵢ² > 0.8` và là tín hiệu cần kiểm tra feature. Đây là diagnostic threshold, không phải yêu cầu tự động xóa biến.
+
+```python
+import pandas as pd
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+from statsmodels.tools.tools import add_constant
+
+# X is a DataFrame containing the predictors
+X = add_constant(x)
+
+vif_data = pd.DataFrame()
+vif_data["feature"] = X.columns
+vif_data["VIF"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
+
+print(vif_data)
+```
+
+![Kết quả VIF](images/4.png)
+
+## Ba cách xử lý multicollinearity
+
+Khi nhiều predictor chứa thông tin trùng nhau, có ba lựa chọn thực tế:
+
+1. Bỏ predictor trùng với thông tin đã có ở biến khác.
+2. Kết hợp các predictor tương quan, chẳng hạn bằng Principal Component Analysis.
+3. Dùng regularization như Ridge hoặc Lasso.
+
+Lựa chọn phụ thuộc vào mục tiêu. Bỏ hoặc kết hợp feature làm thay đổi khả năng diễn giải; regularization giữ mô hình phục vụ prediction nhưng thu nhỏ các coefficient thiếu ổn định.
+
+## PCA giữ các hướng có nhiều variance nhất
+
+Với square matrix `A`, eigenvector `v` và eigenvalue `λ` thỏa mãn:
+
+`Av = λv`
+
+Nhân `v` với `A` làm thay đổi độ lớn theo `λ` nhưng không đổi hướng.
+
+Trong PCA, `A` là covariance matrix. Mỗi eigenvalue đo lượng variance được giữ trên eigenvector tương ứng. Sắp xếp eigenvalue từ lớn đến nhỏ giúp xếp hạng các principal-component direction theo lượng thông tin chúng giữ lại.
+
+Explained-variance ratio được dùng để chọn `k` component đầu tiên—ví dụ, số component đủ để giữ 95% variance.
+
+![Explained variance ratio](images/5.png)
+
+Một covariance matrix `n × n` có `n` cặp eigenvalue–eigenvector:
+
+![Cách tính eigenvalue và eigenvector](images/6.png)
+
+Đưa các eigenvector được chọn vào projection matrix sẽ biến đổi `m` feature ban đầu thành `k` principal component. Cách này giảm số chiều, nhưng component mới là tổ hợp của các biến ban đầu nên khó diễn giải trực tiếp hơn.
+
+## Ridge và Lasso giữ predictor nhưng phạt coefficient
+
+Ridge thêm L2 penalty và thu nhỏ các coefficient tương quan. Lasso thêm L1 penalty và có thể đưa một số coefficient về đúng 0.
+
+![Tổng quan regularization](images/7.png)
+
+![So sánh Lasso và Ridge](images/8.png)
+
+### Nghiệm Ridge
+
+![Ridge objective](images/9.png)
+
+![Ridge solution](images/10.png)
+
+### Nghiệm Lasso
+
+![Lasso solution](images/11.png)
+{% endcapture %}
+<article class="reading-page" data-lang="vi">{{ article_vi | markdownify }}</article>

@@ -1,90 +1,114 @@
-﻿---
-title: K-means Clustering
-title_vi: K-means — thuật toán và cách chọn K
-title_en: K-means — algorithm and choosing K
-description: Lloyd's algorithm alternates assignment and centroid updates; initialization, scaling, stability, and drift determine cluster usefulness.
-description_vi: Lloyd’s algorithm luân phiên gán điểm và cập nhật centroid; initialization, scaling, stability và drift quyết định giá trị của cluster.
-description_en: Lloyd's algorithm alternates assignment and centroid updates; initialization, scaling, stability, and drift determine cluster usefulness.
+---
+title: "K-Means in Banking: Useful for Profiles, Not Labels"
+title_vi: "K-means trong ngân hàng: hiểu chân dung thay vì tạo nhãn"
+title_en: "K-Means in Banking: Useful for Profiles, Not Labels"
+description: A practical view of customer segmentation, the K-means iteration, and choosing K with inertia and silhouette score.
+description_vi: Góc nhìn thực tế về phân khúc khách hàng, vòng lặp K-means và cách chọn K bằng inertia cùng silhouette score.
+description_en: A practical view of customer segmentation, the K-means iteration, and choosing K with inertia and silhouette score.
 date: 2026-02-01
 writing_topic: foundations
 ---
 
-<article class="reading-page" data-lang="vi">
-  <header class="page-intro"><h1>K-means</h1><p>K-means chia dữ liệu thành K nhóm bằng cách tối thiểu hóa tổng bình phương khoảng cách từ mỗi điểm đến centroid của nhóm.</p></header>
-  <h2>Lloyd’s algorithm</h2>
-  <ol class="process"><li>Chọn K centroid ban đầu, thường bằng k-means++.</li><li>Gán <strong>toàn bộ</strong> điểm vào centroid gần nhất.</li><li>Tính lại mỗi centroid bằng trung bình của các điểm trong cluster.</li><li>Lặp bước gán và cập nhật đến khi hội tụ hoặc đạt giới hạn vòng lặp.</li></ol>
-  <p>Đây là batch update. Cập nhật centroid ngay sau từng điểm là một biến thể online, không phải mô tả chuẩn của Lloyd’s algorithm.</p>
-  <h2>Chọn K</h2>
-  <ul><li><strong>Inertia / elbow:</strong> luôn không tăng khi K tăng, vì thêm cluster không thể làm nghiệm tối ưu tệ hơn.</li><li><strong>Silhouette:</strong> đo mức gần với cluster của mình so với cluster lân cận. Score không bắt buộc giảm khi K tăng; nên so sánh các candidate K và kết hợp hiểu biết nghiệp vụ.</li></ul>
-  <h2>Các giả định dễ quên</h2><ul><li>Scale feature trước khi dùng khoảng cách Euclidean.</li><li>K-means phù hợp hơn với cluster gần dạng cầu và kích thước tương đối cân bằng.</li><li>Outlier có thể kéo centroid mạnh.</li><li>Chạy nhiều initialization vì nghiệm phụ thuộc điểm bắt đầu.</li></ul>
-  <h2>Trong bài toán khách hàng</h2><p>Cluster chỉ có giá trị khi mô tả được một nhóm ổn định và dẫn đến hành động khác nhau. Sau khi fit, tôi sẽ kiểm tra stability qua nhiều seed/time window, profile từng cluster và xem cluster có tạo ra chiến lược khác biệt hay không.</p>
-  <h2>Objective, scaling, business validity và drift</h2>
-  <h3>Objective của K-means là within-cluster sum of squares</h3><p>Mỗi vòng Lloyd’s algorithm gồm một bước gán toàn bộ điểm và một bước cập nhật toàn bộ centroid. Hai bước này không làm objective tăng, nhưng chỉ đảm bảo hội tụ đến local optimum. Vì vậy initialization và số lần chạy lại vẫn quan trọng.</p>
-  <pre><code class="language-python">import numpy as np
+{% capture article_en %}
+🔙 [Back to Home](/)
 
-def kmeans(X, n_clusters, seed=42, max_iter=100, tolerance=1e-6):
-    rng = np.random.default_rng(seed)
-    centroids = X[rng.choice(len(X), n_clusters, replace=False)].copy()
+# K-Means in Banking: Useful for Profiles, Not Labels
 
-    for _ in range(max_iter):
-        squared_distance = ((X[:, None, :] - centroids[None, :, :]) ** 2).sum(axis=2)
-        labels = squared_distance.argmin(axis=1)
-        updated = centroids.copy()
-        for cluster in range(n_clusters):
-            members = X[labels == cluster]
-            if len(members):
-                updated[cluster] = members.mean(axis=0)
-            else:
-                updated[cluster] = X[rng.integers(len(X))]
-        if np.linalg.norm(updated - centroids) &lt;= tolerance:
-            centroids = updated
-            break
-        centroids = updated
+K-means can divide customers into groups with similar features, but it does not tell us that those groups are objectively correct. In my banking work, its main value has been helping people understand customer profiles rather than solving a specific classification problem.
 
-    inertia = ((X - centroids[labels]) ** 2).sum()
-    return centroids, labels, inertia</code></pre>
-  <h3>Scaling định nghĩa thế nào là “gần”</h3><p>Nếu thu nhập có giá trị hàng chục triệu còn tần suất giao dịch chỉ từ 0 đến 30, khoảng cách Euclidean sẽ chủ yếu bị chi phối bởi thu nhập nếu feature không được biến đổi hoặc scale. Tham số scaling chỉ được học từ tập train/reference; trọng số feature phải phản ánh mục đích phân khúc.</p>
-  <h3>Elbow và silhouette không tự chọn đáp án nghiệp vụ</h3><p>Inertia luôn giảm khi K tăng, còn silhouette có thể tăng hoặc giảm. Dùng cả hai như chỉ báo chẩn đoán, rồi kiểm tra profile có ổn định qua nhiều seed, sample và time window hay không. Loại một phân khúc dù metric đẹp nếu không thể đặt tên nhất quán hoặc không dẫn đến hành động khác biệt.</p>
-  <h3>Theo dõi assignment drift sau khi triển khai</h3><p>Theo dõi độ dịch chuyển centroid, kích thước cluster, phân phối feature và tỷ lệ khách hàng đổi cluster. Thay đổi đột ngột có thể đến từ hành vi thật, upstream data drift hoặc lỗi preprocessing; cluster ID không thể tự phân biệt ba nguyên nhân này.</p>
-  <h2>Nguồn</h2><ul><li><a href="https://scikit-learn.org/stable/modules/clustering.html#k-means">Scikit-learn: K-means</a></li><li><a href="https://scikit-learn.org/stable/modules/generated/sklearn.metrics.silhouette_score.html">Silhouette score API</a></li></ul>
-</article>
+## A banking use case: understanding insurance customers
 
-<article class="reading-page" data-lang="en">
-  <header class="page-intro"><h1>K-means</h1><p>K-means partitions data into K groups by minimizing the sum of squared distances from each point to its assigned centroid.</p></header>
-  <h2>Lloyd’s algorithm</h2>
-  <ol class="process"><li>Choose K initial centroids, commonly with k-means++.</li><li>Assign <strong>all</strong> points to their nearest centroid.</li><li>Recompute each centroid as the mean of its assigned points.</li><li>Repeat assignment and update until convergence or the iteration limit.</li></ol>
-  <p>This is a batch update. Updating the centroid after every point describes an online variant, not standard Lloyd’s algorithm.</p>
-  <h2>Choosing K</h2>
-  <ul><li><strong>Inertia / elbow:</strong> never increases as K grows because an additional cluster cannot worsen the optimal objective.</li><li><strong>Silhouette:</strong> compares cohesion with separation. It does not have to decrease as K grows; compare candidate values and combine the result with domain knowledge.</li></ul>
-  <h2>Assumptions people forget</h2><ul><li>Scale features before using Euclidean distance.</li><li>K-means works best for roughly spherical, similarly sized groups.</li><li>Outliers can pull centroids substantially.</li><li>Use multiple initializations because the solution depends on the starting points.</li></ul>
-  <h2>For customer segmentation</h2><p>A cluster is useful only if it describes a stable group and supports a distinct action. After fitting, I would test stability across seeds and time windows, profile each group, and ask whether it changes a real strategy.</p>
-  <h2>Objective, scaling, business validity, and drift</h2>
-  <h3>K-means minimizes within-cluster sum of squares</h3><p>Each Lloyd iteration has one assignment step for all points and one centroid update for all clusters. These steps do not increase the objective, but they guarantee convergence only to a local optimum. Initialization and repeated runs therefore still matter.</p>
-  <pre><code class="language-python">import numpy as np
+Suppose we have a set of customers who purchased insurance. K-means can reveal groups such as customers over 35 with high assets under management and frequent medicine or medical-examination transactions.
 
-def kmeans(X, n_clusters, seed=42, max_iter=100, tolerance=1e-6):
-    rng = np.random.default_rng(seed)
-    centroids = X[rng.choice(len(X), n_clusters, replace=False)].copy()
+That output is useful for exploring the portfolio and discussing customer behavior with the business. It is different from classification: there is no known target label, and the cluster number itself does not carry business meaning until we inspect the features of the customers assigned to it.
 
-    for _ in range(max_iter):
-        squared_distance = ((X[:, None, :] - centroids[None, :, :]) ** 2).sum(axis=2)
-        labels = squared_distance.argmin(axis=1)
-        updated = centroids.copy()
-        for cluster in range(n_clusters):
-            members = X[labels == cluster]
-            if len(members):
-                updated[cluster] = members.mean(axis=0)
-            else:
-                updated[cluster] = X[rng.integers(len(X))]
-        if np.linalg.norm(updated - centroids) &lt;= tolerance:
-            centroids = updated
-            break
-        centroids = updated
+## K-means alternates assignment and centroid updates
 
-    inertia = ((X - centroids[labels]) ** 2).sum()
-    return centroids, labels, inertia</code></pre>
-  <h3>Scaling defines what “near” means</h3><p>If income ranges in tens of millions while transaction frequency ranges from 0 to 30, Euclidean distance will mostly follow income unless features are transformed or scaled. Learn scaling parameters from training/reference data and choose feature weights from the segmentation purpose, not convenience.</p>
-  <h3>Elbow and silhouette do not choose the business answer</h3><p>Inertia always falls as K grows; silhouette can move in either direction. Use both as diagnostics, then test whether profiles remain similar across seeds, samples, and later time windows. Reject a mathematically neat segmentation if it cannot be named consistently or does not change an action.</p>
-  <h3>Evaluate assignment drift after deployment</h3><p>Track centroid movement, cluster sizes, feature distributions, and the fraction of customers switching clusters. A sudden change may represent real behavior, upstream drift, or a preprocessing bug; a cluster ID alone cannot tell you which.</p>
-  <h2>Sources</h2><ul><li><a href="https://scikit-learn.org/stable/modules/clustering.html#k-means">Scikit-learn: K-means</a></li><li><a href="https://scikit-learn.org/stable/modules/generated/sklearn.metrics.silhouette_score.html">Silhouette score API</a></li></ul>
-</article>
+Given `N` data points, K-means assigns them to `K` clusters according to their distance from the cluster centroids:
+
+1. Choose `K`, the number of clusters.
+2. Initialize `K` centroids, often from selected data points.
+3. Assign every point to its nearest centroid.
+4. Recalculate each centroid from the points assigned to that cluster.
+5. Repeat assignment and update until the assignments or centroids stop changing enough.
+
+Because the initial centroids affect the final result, different initializations can produce different clusters.
+
+## Inertia always falls as K increases
+
+The elbow curve uses within-cluster distance, commonly called inertia: the sum of squared distances from each point to its assigned centroid.
+
+![Elbow curve](images/1.png)
+
+Increasing `K` gives the algorithm more centroids, so inertia cannot increase. This also means the smallest inertia does not identify the best `K`; choosing one cluster per point would minimize it without producing a useful segmentation. The elbow is the point after which additional clusters reduce inertia only slightly.
+
+## Silhouette checks separation as well as compactness
+
+For point `i`, the silhouette value is:
+
+`s(i) = (b(i) - a(i)) / max(b(i), a(i))`
+
+- `a(i)`: average distance from point `i` to other points in its own cluster.
+- `b(i)`: lowest average distance from point `i` to points in another cluster.
+
+The silhouette score is the average of `s(i)` across all points. A higher value means points are closer to their own cluster than to neighboring clusters.
+
+![Silhouette score](images/2.svg)
+
+Unlike inertia, silhouette does not move in one guaranteed direction as `K` increases. I use the elbow and silhouette together, then inspect whether the resulting customer profiles are distinct and understandable to the business.
+
+That final inspection matters: a mathematically separated cluster is not automatically a useful customer segment.
+{% endcapture %}
+<article class="reading-page" data-lang="en">{{ article_en | markdownify }}</article>
+
+{% capture article_vi %}
+🔙 [Quay lại trang chủ](/)
+
+# K-means trong ngân hàng: hữu ích cho chân dung, không phải nhãn
+
+K-means có thể chia khách hàng thành những nhóm có feature tương tự, nhưng không khẳng định các nhóm đó đúng một cách khách quan. Trong công việc ngân hàng của tôi, giá trị chính của K-means là giúp hiểu chân dung khách hàng thay vì giải quyết một bài toán classification cụ thể.
+
+## Một use case ngân hàng: hiểu nhóm khách hàng mua bảo hiểm
+
+Giả sử có một tập khách hàng đã mua bảo hiểm. K-means có thể cho thấy các nhóm như khách hàng trên 35 tuổi, có assets under management cao và thường xuyên phát sinh giao dịch mua thuốc hoặc khám bệnh.
+
+Output này hữu ích khi khám phá portfolio và thảo luận hành vi khách hàng với business. Nó khác classification: không có target label đã biết, và cluster number tự nó không mang business meaning cho đến khi chúng ta kiểm tra feature của khách hàng trong cluster.
+
+## K-means luân phiên assignment và cập nhật centroid
+
+Với `N` data point, K-means gán chúng vào `K` cluster theo khoảng cách tới cluster centroid:
+
+1. Chọn `K`, số cluster.
+2. Khởi tạo `K` centroid, thường từ các data point được chọn.
+3. Gán mỗi point vào centroid gần nhất.
+4. Tính lại từng centroid từ các point thuộc cluster đó.
+5. Lặp lại assignment và update cho đến khi assignment hoặc centroid gần như không đổi.
+
+Vì centroid ban đầu ảnh hưởng đến kết quả cuối, các initialization khác nhau có thể tạo ra cluster khác nhau.
+
+## Inertia luôn giảm khi K tăng
+
+Elbow curve sử dụng within-cluster distance, thường gọi là inertia: tổng squared distance từ từng point đến centroid được gán.
+
+![Elbow curve](images/1.png)
+
+Khi tăng `K`, thuật toán có thêm centroid nên inertia không thể tăng. Vì thế, inertia nhỏ nhất không xác định được `K` tốt nhất; nếu mỗi point là một cluster thì inertia sẽ nhỏ nhất nhưng segmentation không có ích. Elbow là điểm mà thêm cluster mới chỉ làm inertia giảm một lượng nhỏ.
+
+## Silhouette kiểm tra cả độ tách biệt và độ chặt
+
+Với point `i`:
+
+`s(i) = (b(i) - a(i)) / max(b(i), a(i))`
+
+- `a(i)`: khoảng cách trung bình từ point `i` đến các point khác trong cùng cluster.
+- `b(i)`: khoảng cách trung bình nhỏ nhất từ point `i` đến các point thuộc một cluster khác.
+
+Silhouette score là trung bình của `s(i)` trên toàn bộ point. Giá trị cao hơn nghĩa là point gần cluster của nó hơn các cluster lân cận.
+
+![Silhouette score](images/2.svg)
+
+Khác với inertia, silhouette không có một chiều biến động cố định khi `K` tăng. Tôi dùng elbow và silhouette cùng nhau, sau đó kiểm tra các customer profile thu được có khác biệt và có thể giải thích với business hay không.
+
+Bước kiểm tra cuối cùng rất quan trọng: một cluster tách biệt về mặt toán học chưa chắc là một customer segment hữu ích.
+{% endcapture %}
+<article class="reading-page" data-lang="vi">{{ article_vi | markdownify }}</article>
