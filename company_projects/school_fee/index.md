@@ -16,34 +16,34 @@ permalink: /company_projects/school_fee/
 
 # School-Fee Payments: Identify Before Forecasting Them
 
-Forecasting is not the first problem. Before estimating when a customer will pay school fees and how much, we first need to identify which bank transactions are actually school-fee payments and, when possible, which school received them.
+Forecasting is not the first problem. Before estimating when a customer will pay school fees and how much, we need to identify which bank transactions are actually school-fee payments and, when possible, which school received them. Otherwise, a forecasting model can produce precise-looking answers for the wrong transactions.
 
-## What the use cases need
+## The use cases need more than a school-fee label
 
-School fees are among the more regular and predictable expenses for families with children. Once identified, these payments can support three use cases:
+School-fee payments often recur around school-specific collection periods, although their timing and amount can change between terms. Once identified, they can support three use cases:
 
 | Use case | Information required | How it is used |
 | --- | --- | --- |
 | Unsecured lending | Expected payment time and amount (ticket size) | Estimate a recurring cash outflow |
-| Financial capacity | Historical fee amount and payment frequency | Use as an indirect signal of financial capacity |
+| Financial capacity | Historical fee amount and payment frequency | Use as a supporting signal of financial capacity, not a conclusion on its own |
 | Credit card | Months in which school-fee payments concentrate | Time seasonal campaigns |
 
-A school-fee label alone is therefore not enough. The useful output needs the customer, the matched school, the likely payment period, and the expected amount.
+A school-fee label alone is therefore not enough. The useful output needs four fields: the customer, the matched school, the likely payment period, and the expected amount.
 
-## What a school-fee transaction should look like
+## The ideal transaction identifies both parties
 
 In the ideal case, both sides of the transaction are known:
 
 - Sender: a parent or student
 - Receiver: the school
 
-With both entities identified, the transaction purpose is much easier to infer.
+With both entities identified, the payment purpose is much easier to infer. In practice, however, the bank usually has a much clearer view of the sender than of the receiver.
 
 ![Customer transactions](images/1.png)
 
-## Why receiver-side identification breaks down
+## Receiver-side data is incomplete when the school uses another bank
 
-In Viet Nam, schools use accounts from many different banks, while only a small number use TCB accounts. Receiver-side school information is therefore largely missing from our internal data, so receiver accounts alone cannot reliably identify school-fee payments.
+In Viet Nam, schools use accounts from many different banks, while only a small number use TCB accounts. When a customer pays a school at another bank, the receiver-side information available internally is limited. Receiver account IDs alone therefore cannot provide a complete school list.
 
 The main usable identity signal is the beneficiary name, which often contains the school name. This signal is noisy:
 
@@ -51,37 +51,63 @@ The main usable identity signal is the beneficiary name, which often contains th
 - Spelling variations and abbreviations are common.
 - Different schools may have similar or identical names.
 
-Beneficiary-name matching can therefore assign a transaction to the wrong school or classify a non-school transaction as a school-fee payment.
+For example, a full name such as `TRUONG TRUNG HOC PHO THONG <NAME>` may appear in abbreviated forms such as `THPT <NAME>` or `TRUONG <NAME>`. These variations may refer to the same school, while the same shortened name may also refer to different schools. Beneficiary-name matching can therefore assign a transaction to the wrong school or classify a non-school transaction as a school-fee payment.
 
-## How we construct the school-fee transaction set
+## Keywords create candidates; repeated behavior validates them
 
-The identification process is:
+The identification process separates broad candidate generation from stricter validation:
 
-1. Create a candidate set from beneficiary names containing school-related keywords such as `Truong`, `Tieu hoc`, `Trung hoc`, and `Dai hoc`.
-2. Analyze the related customers across payment frequency, amount, and timing.
-3. Filter legitimate schools using the number of transactions, number of customers, and payment consistency. One useful consistency signal is the same customer transferring money to the same school across multiple months or years.
-4. Resolve ambiguous school names and remove likely false positives.
-5. Finalize the school-fee transaction set.
-6. Aggregate features from both the customer and school perspectives, then integrate them into the feature mart.
+1. Create a high-recall candidate set from beneficiary names containing school-related keywords. The list can include `Truong`, `Tieu hoc`, `TH`, `Trung hoc`, `THCS`, `THPT`, `Dai hoc`, `DH`, `Mam non`, `Mau giao`, and `Hoc phi`.
+2. Analyze the customers connected to each candidate using payment frequency, amount, and timing.
+3. Look for customer-level consistency: the same customer transferring money to the same school across multiple months or years is stronger evidence than a single transaction.
+4. Look for receiver-level consistency: transaction count, customer count, and concentration around recurring collection periods help distinguish a school from an accidental keyword match.
+5. Resolve ambiguous school names and remove likely false positives.
+6. Finalize the school-fee transaction set, aggregate features from both the customer and school perspectives, and integrate them into the feature mart.
 
-This preprocessing step determines which transactions enter the later analysis. Forecasting a poorly identified transaction set would only produce precise-looking results for the wrong payments.
+The keyword list deliberately favors recall; the behavioral checks provide precision. Treating a keyword match as the final label would collapse these two jobs and allow false positives into every downstream analysis.
 
-## Apply time-series analysis after identification
+## The forecast has three separate targets
 
-With 3–4 years of identified transactions, we restructure each customer's monthly payments into a time series. Time-series decomposition separates the trend, seasonality, and residual components, which are then used to predict payments over the next three months.
+With 3–4 years of identified transactions, we restructure each customer's monthly payments into a time series. The final prediction is easier to reason about when split into three targets:
 
-We produce a second prediction table at the school level. For each school, it predicts which parents are likely to pay based on the school's collection pattern. If School A usually collects fees in January and August, customers who previously paid School A are expected to follow a similar schedule.
+1. **Whether:** is the customer likely to make a school-fee payment in the next three months?
+2. **When:** in which month is the payment most likely?
+3. **Where and how much:** which previously observed school is the likely receiver, and what ticket size should be expected?
 
-This produces two views of the next payment period:
+Time-series decomposition separates trend, seasonality, and residual behavior to support the timing and amount estimates. The customer's previous school relationships provide the candidate receiver; one time-series model is not expected to infer every target by itself.
+
+## Two prediction tables provide independent evidence
+
+The process produces two views of the next payment period:
 
 - **Customer-level prediction:** for each customer, predict the school they will pay, the payment time, and the amount.
-- **School-level prediction:** for each school, predict the parents who are likely to pay during its collection period.
+- **School-level prediction:** for each school, consider its historical payers and predict which of them are likely to pay during its next collection period.
+
+The school-level view uses the school's collection pattern rather than treating every customer as a candidate. If School A usually collects fees in January and August, customers who previously paid School A are expected to be more likely to pay during those periods.
 
 Customers appearing in both prediction tables are prioritized first. The other two groups—customer-level only and school-level only—are retained and labeled separately rather than discarded.
 
-After the payment period, we measure the outcome of each group separately. Comparing the overlap, customer-only, and school-only groups shows which method contributes useful predictions and provides evidence for improving the method in the next month or the next school year.
+## Three cohorts reveal which prediction view adds value
 
-(*) Time-series decomposition and related methods will be covered in a separate technical article.
+After the payment period, the three cohorts are evaluated separately:
+
+| Cohort | Why retain it |
+| --- | --- |
+| Customer ∩ School | Both views agree; this group receives the highest deployment priority |
+| Customer only | Measures the incremental value of customer-level history |
+| School only | Measures the incremental value of school collection patterns |
+
+For each cohort, evaluation can check four outcomes independently: whether a payment occurred inside the prediction window, whether the school was correct, how far the predicted payment period was from the actual period, and the error in predicted ticket size. A single “correct prediction” label would hide which part of the forecast failed.
+
+Comparing the three cohorts over the same observation window shows which view contributes useful predictions. The comparison then informs changes for the next month or the next school year instead of allowing only the overlap group to survive without evidence.
+
+## What this approach still cannot observe
+
+The method depends on transaction history. A new customer with no previous school-fee payment may appear in neither prediction table. A customer changing schools can also break the historical customer–school relationship. Receiver-side coverage remains incomplete when a school uses another bank, even after beneficiary-name analysis.
+
+This article describes the identification and evaluation design, not model performance. Time-series decomposition and its implementation remain outside its scope and will be covered in a separate technical article.
+
+The central lesson is simple: first establish that a transaction is a school-fee payment, then forecast its timing and amount. Better forecasting cannot repair a mislabeled transaction set.
 {% endcapture %}
 <article class="reading-page" data-lang="en">{{ article_en | markdownify }}</article>
 
