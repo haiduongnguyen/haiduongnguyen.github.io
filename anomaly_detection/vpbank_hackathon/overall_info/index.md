@@ -2,9 +2,9 @@
 title: "Synthetic Logs and Metrics: What the Files Contain"
 title_vi: "Logs và metrics giả lập: dữ liệu trong từng file"
 title_en: "Synthetic Logs and Metrics: What the Files Contain"
-description: Two linked JSONL datasets contain 1,500 application-log and APM-metric records for anomaly-detection experiments.
-description_vi: Hai bộ JSONL liên kết chứa 1.500 application log và APM metric để thử nghiệm anomaly detection.
-description_en: Two linked JSONL datasets contain 1,500 application-log and APM-metric records for anomaly-detection experiments.
+description: Two synthetic JSONL datasets contain application-log and APM-metric records, but their trace IDs reveal that they cannot yet be joined.
+description_vi: Hai bộ JSONL giả lập chứa application log và APM metric, nhưng trace ID cho thấy hiện chưa thể join hai file.
+description_en: Two synthetic JSONL datasets contain application-log and APM-metric records, but their trace IDs reveal that they cannot yet be joined.
 date: 2026-02-02
 writing_topic: anomaly
 permalink: /anomaly_detection/vpbank_hackathon/overall_info/
@@ -15,9 +15,20 @@ permalink: /anomaly_detection/vpbank_hackathon/overall_info/
 
 # Synthetic Logs and Metrics: What the Files Contain
 
-Logs explain discrete events; metrics describe numeric behavior over time. I generated both so an anomaly-detection experiment can connect an unusual measurement with the application activity around it.
+Logs explain discrete events; metrics describe numeric behavior over time. I generated both for anomaly-detection experiments, but inspecting the published files exposes an important limitation: they are internally trace-structured, yet they cannot currently be joined to each other.
 
 The published artifacts are synthetic. They do not contain customer or internal production data.
+
+## The two files contain 600 traces, not 300 shared traces
+
+The files have the same shape but were generated as separate datasets:
+
+| File | Records | Unique traces | Spans per trace | Anomalous records | Anomalous traces |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `application_logs.jsonl` | 1,500 | 300 | 5 | 125 (8.33%) | 25 (8.33%) |
+| `apm_metrics.jsonl` | 1,500 | 300 | 5 | 95 (6.33%) | 19 (6.33%) |
+
+Every trace is internally consistent: all five spans in a trace share the same synthetic anomaly label. However, the two files have **zero shared trace IDs and zero shared span IDs**. The identifiers connect records inside each file, but do not connect a log record to a metric record in the other file.
 
 ## Application logs describe what happened
 
@@ -50,20 +61,30 @@ The downloadable [`apm_metrics.jsonl`](./apm_metrics.jsonl) also contains **1,50
 - `throughput`
 - `is_anomaly`
 
-The trace and span identifiers provide the connection between the log and metric views. The `is_anomaly` field is synthetic ground truth for evaluating a detector; it should not be used as an input feature.
+The metric values in the published file range from `20.04` to `99.99` for CPU, `30.02` to `99.94` for memory, `20.01` to `899.59` for latency, and `50` to `200` for throughput. These ranges describe this synthetic artifact, not production operating limits.
+
+The `is_anomaly` field is synthetic ground truth for evaluating a detector; it must not be used as an input feature. Because five rows share one trace and one label, train/test splitting should also happen by `trace_id`. A row-level random split could place sibling spans from the same synthetic request on both sides of the evaluation.
 
 ## The generators model anomalies at trace-chain level
 
-The two scripts use a shared trace-chain generator. For each request, they create spans across services and assign the same anomaly state to the generated chain. Normal and anomalous values are sampled from different configured ranges.
+The two scripts reference the same trace-chain design. For each request, they create spans across services and assign one anomaly state to the generated chain. Normal and anomalous values are sampled from different configured ranges.
 
 - [`generate_logs.py`](./generate_logs.py) writes the application-log records.
 - [`generate_metrics.py`](./generate_metrics.py) writes the APM-metric records.
 
-The current scripts reference `trace_chain.py`, `topology.json`, `config_logs.yaml`, and `config_metrics.yaml`, which are not present in this repository. The JSONL artifacts can be downloaded and inspected, but the datasets cannot currently be regenerated from the two published scripts alone.
+The current scripts reference `trace_chain.py`, `topology.json`, `config_logs.yaml`, and `config_metrics.yaml`, which are not present in this repository. The JSONL artifacts can be downloaded and inspected, but the datasets cannot currently be regenerated from the two published scripts alone. This is a reproducibility gap, not merely a documentation gap.
 
-## Keep the two signals separate before combining them
+## The current artifacts support separate experiments
 
-Logs and metrics answer different questions. A latency spike shows that behavior changed; the related log message, service, path, and trace context can help explain what happened at that time. Keeping both tables linked by trace identifiers preserves that distinction for later anomaly-detection and root-cause-analysis experiments.
+The metric file can support numeric anomaly-detection experiments using CPU, memory, latency, and throughput. The log file can support experiments using level, service, path, message, status, and latency. Within either file, trace-level aggregation can preserve the five-span request structure.
+
+The current files cannot support a valid claim that a metric anomaly was explained by the log messages from the same request. Similar timestamps or service names are not a safe substitute for a shared trace ID.
+
+## Cross-signal RCA requires one shared generation pass
+
+To create a genuinely linked dataset, one generated trace chain should be passed to both writers in the same run. The log and metric records for each span must reuse the same `trace_id`, `span_id`, `parent_span_id`, timestamp, service, and anomaly state; only the signal-specific fields should differ.
+
+That design would make the intended analysis possible: a latency or CPU anomaly could be joined to the exact log events from the same request. Until the missing generator files are published and the identifiers are shared, the honest boundary is two separate synthetic experiments rather than one combined root-cause-analysis dataset.
 
 Reference: [Splunk — What is log data?](https://www.splunk.com/en_us/blog/learn/log-data.html)
 {% endcapture %}
@@ -74,9 +95,20 @@ Reference: [Splunk — What is log data?](https://www.splunk.com/en_us/blog/lear
 
 # Logs và metrics giả lập: dữ liệu trong từng file
 
-Log giải thích từng event đã xảy ra; metric mô tả numeric behavior theo thời gian. Tôi tạo cả hai để một anomaly-detection experiment có thể kết nối measurement bất thường với application activity diễn ra quanh nó.
+Log giải thích từng event đã xảy ra; metric mô tả numeric behavior theo thời gian. Tôi tạo cả hai cho anomaly-detection experiment, nhưng khi kiểm tra các file đã công bố, một giới hạn quan trọng xuất hiện: mỗi file có cấu trúc trace nội bộ nhưng hiện chưa thể join với file còn lại.
 
 Các artifact được công bố hoàn toàn là synthetic data, không chứa dữ liệu khách hàng hoặc dữ liệu production nội bộ.
+
+## Hai file chứa 600 trace riêng biệt, không phải 300 trace dùng chung
+
+Hai file có cùng hình dạng nhưng được tạo thành hai dataset riêng:
+
+| File | Số record | Unique trace | Span mỗi trace | Anomalous record | Anomalous trace |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `application_logs.jsonl` | 1.500 | 300 | 5 | 125 (8,33%) | 25 (8,33%) |
+| `apm_metrics.jsonl` | 1.500 | 300 | 5 | 95 (6,33%) | 19 (6,33%) |
+
+Bên trong mỗi trace, dữ liệu nhất quán: cả năm span cùng mang một synthetic anomaly label. Tuy nhiên, hai file có **0 trace ID trùng nhau và 0 span ID trùng nhau**. Các identifier kết nối record bên trong từng file, nhưng không kết nối log record với metric record ở file còn lại.
 
 ## Application log mô tả điều gì đã xảy ra
 
@@ -109,20 +141,30 @@ File [`apm_metrics.jsonl`](./apm_metrics.jsonl) cũng chứa **1.500 record**. M
 - `throughput`
 - `is_anomaly`
 
-Trace ID và span ID tạo liên kết giữa góc nhìn log và metric. Field `is_anomaly` là synthetic ground truth để đánh giá detector; không được dùng làm input feature.
+Trong metric file đã công bố, CPU nằm trong khoảng `20.04`–`99.99`, memory `30.02`–`99.94`, latency `20.01`–`899.59` và throughput `50`–`200`. Đây là range của synthetic artifact này, không phải production operating limit.
+
+Field `is_anomaly` là synthetic ground truth dùng để đánh giá detector; tuyệt đối không được dùng làm input feature. Vì năm dòng cùng chia sẻ một trace và một label, train/test split cũng phải thực hiện theo `trace_id`. Random split theo từng dòng có thể đưa các sibling span của cùng một synthetic request vào cả train và test.
 
 ## Generator tạo anomaly ở cấp trace chain
 
-Hai script sử dụng chung một trace-chain generator. Với mỗi request, chúng tạo các span đi qua nhiều service và gán cùng anomaly state cho chain được tạo. Normal và anomalous value được sample từ các configured range khác nhau.
+Hai script tham chiếu cùng một thiết kế trace chain. Với mỗi request, chúng tạo các span đi qua nhiều service và gán một anomaly state cho chain được tạo. Normal và anomalous value được sample từ các configured range khác nhau.
 
 - [`generate_logs.py`](./generate_logs.py) ghi application-log record.
 - [`generate_metrics.py`](./generate_metrics.py) ghi APM-metric record.
 
-Các script hiện tại tham chiếu đến `trace_chain.py`, `topology.json`, `config_logs.yaml` và `config_metrics.yaml`, nhưng các file này chưa có trong repository. Có thể tải xuống và kiểm tra các JSONL artifact, nhưng hiện chưa thể regenerate dataset chỉ bằng hai script đã công bố.
+Các script hiện tại tham chiếu đến `trace_chain.py`, `topology.json`, `config_logs.yaml` và `config_metrics.yaml`, nhưng các file này chưa có trong repository. Có thể tải xuống và kiểm tra các JSONL artifact, nhưng hiện chưa thể regenerate dataset chỉ bằng hai script đã công bố. Đây là reproducibility gap, không chỉ là thiếu documentation.
 
-## Giữ hai signal riêng trước khi kết hợp
+## Artifact hiện tại hỗ trợ hai experiment riêng
 
-Log và metric trả lời hai câu hỏi khác nhau. Latency spike cho biết behavior đã thay đổi; log message, service, path và trace context liên quan giúp giải thích điều gì xảy ra tại thời điểm đó. Giữ hai bảng liên kết bằng trace ID bảo toàn sự khác biệt này cho anomaly-detection và root-cause-analysis experiment sau này.
+Metric file hỗ trợ numeric anomaly-detection experiment với CPU, memory, latency và throughput. Log file hỗ trợ experiment với level, service, path, message, status và latency. Trong từng file, trace-level aggregation có thể giữ lại cấu trúc request gồm năm span.
+
+Các file hiện tại không hỗ trợ một claim hợp lệ rằng metric anomaly được giải thích bằng log message của cùng request. Timestamp hoặc service name tương tự không phải lựa chọn an toàn thay cho shared trace ID.
+
+## Cross-signal RCA cần một shared generation pass
+
+Để tạo dataset thực sự liên kết, cùng một trace chain phải được đưa cho cả hai writer trong cùng một lần chạy. Log record và metric record của từng span phải dùng chung `trace_id`, `span_id`, `parent_span_id`, timestamp, service và anomaly state; chỉ các field riêng của từng signal được phép khác nhau.
+
+Thiết kế đó mới cho phép phân tích đúng mục tiêu: một latency hoặc CPU anomaly có thể được join với chính xác log event từ cùng request. Cho đến khi các generator file còn thiếu được công bố và identifier được dùng chung, giới hạn trung thực là hai synthetic experiment riêng thay vì một cross-signal root-cause-analysis dataset.
 
 Tham khảo: [Splunk — What is log data?](https://www.splunk.com/en_us/blog/learn/log-data.html)
 {% endcapture %}

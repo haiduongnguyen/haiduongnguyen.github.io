@@ -130,13 +130,41 @@ The output of this analysis is a set of descriptive profiles, not a prediction o
 
 # K-means trong ngân hàng: hữu ích cho chân dung, không phải nhãn
 
-K-means có thể chia khách hàng thành những nhóm có feature tương tự, nhưng không khẳng định các nhóm đó đúng một cách khách quan. Trong công việc ngân hàng của tôi, giá trị chính của K-means là giúp hiểu chân dung khách hàng thay vì giải quyết một bài toán classification cụ thể.
+K-means có thể chia khách hàng thành các nhóm có feature tương tự, nhưng không khám phá ra những customer segment đúng một cách khách quan. Trong công việc ngân hàng của tôi, giá trị của nó hẹp hơn nhưng hữu ích hơn: biến một bảng khách hàng lớn thành một số ít profile để analyst và business cùng kiểm tra.
 
-## Một use case ngân hàng: hiểu nhóm khách hàng mua bảo hiểm
+## Câu hỏi business phải có trước các cluster
 
-Giả sử có một tập khách hàng đã mua bảo hiểm. K-means có thể cho thấy các nhóm như khách hàng trên 35 tuổi, có assets under management cao và thường xuyên phát sinh giao dịch mua thuốc hoặc khám bệnh.
+Use case bắt đầu với những khách hàng đã mua bảo hiểm. Câu hỏi không phải “Ai sẽ mua bảo hiểm?”—đó là một bài toán supervised learning có nhãn. Câu hỏi ở đây là “Trong portfolio bảo hiểm đang tồn tại những customer profile nào?”
 
-Output này hữu ích khi khám phá portfolio và thảo luận hành vi khách hàng với business. Nó khác classification: không có target label đã biết, và cluster number tự nó không mang business meaning cho đến khi chúng ta kiểm tra feature của khách hàng trong cluster.
+K-means có thể cho thấy một profile gồm khách hàng trên 35 tuổi, có assets under management cao và thường xuyên phát sinh giao dịch mua thuốc hoặc khám bệnh. Kết quả này hỗ trợ phân tích portfolio và giúp trao đổi với business cụ thể hơn, nhưng thuật toán không giải thích vì sao họ mua bảo hiểm hoặc chứng minh profile sẽ ổn định theo thời gian.
+
+Bài toán không có target label đã biết. Một cluster number như `2` không mang ý nghĩa business cho đến khi kiểm tra khách hàng và feature thuộc cluster đó.
+
+## Mỗi dòng phải là một khách hàng trong cùng observation window
+
+Trước khi chọn `K`, phân tích cần một bảng feature cấp khách hàng. Mỗi dòng đại diện cho một khách hàng và mọi behavioral feature phải được tính trên cùng observation window. Các feature phù hợp với use case này gồm:
+
+- Tuổi.
+- Assets under management.
+- Số lượng hoặc tần suất giao dịch mua thuốc.
+- Số lượng hoặc tần suất giao dịch khám bệnh.
+
+Observation window rất quan trọng. Số giao dịch trong một tháng không thể so trực tiếp với số giao dịch trong mười hai tháng; trộn các cửa sổ thời gian có thể tạo ra cluster phản ánh cách xây feature thay vì hành vi khách hàng.
+
+Định nghĩa feature cũng phải dễ diễn giải. Nếu business không giải thích được giá trị cao hoặc thấp có nghĩa gì, centroid thu được cũng khó diễn giải.
+
+## Scaling quyết định thế nào là “khách hàng tương tự”
+
+K-means thường dựa trên Euclidean distance. Nếu không scaling, một feature tiền tệ như assets under management có thể lấn át tuổi hoặc tần suất giao dịch chỉ vì có numeric range lớn hơn.
+
+Với use case này, bước chuẩn bị dữ liệu cần:
+
+1. Xử lý missing value nhất quán, tránh để sự thiếu dữ liệu vô tình trở thành một segment.
+2. Kiểm tra các monetary feature và count feature bị lệch mạnh, rồi transform khi có căn cứ.
+3. Scale các numeric feature cuối cùng trước khi tính khoảng cách.
+4. Lưu transformation parameter để sau đó có thể chuyển cluster profile về đơn vị business.
+
+Đây không phải preprocessing mang tính hình thức. Thay đổi scale sẽ thay đổi centroid gần nhất và có thể thay đổi segment được gán cho khách hàng.
 
 ## K-means luân phiên assignment và cập nhật centroid
 
@@ -148,15 +176,15 @@ Với `N` data point, K-means gán chúng vào `K` cluster theo khoảng cách t
 4. Tính lại từng centroid từ các point thuộc cluster đó.
 5. Lặp lại assignment và update cho đến khi assignment hoặc centroid gần như không đổi.
 
-Vì centroid ban đầu ảnh hưởng đến kết quả cuối, các initialization khác nhau có thể tạo ra cluster khác nhau.
+Vì centroid ban đầu ảnh hưởng đến kết quả cuối, các initialization khác nhau có thể tạo ra cluster khác nhau. Chạy nhiều initialization giúp giảm khả năng báo cáo một local solution kém chỉ vì điểm khởi tạo không may.
 
-## Inertia luôn giảm khi K tăng
+## Inertia không thể tự chọn K
 
 Elbow curve sử dụng within-cluster distance, thường gọi là inertia: tổng squared distance từ từng point đến centroid được gán.
 
 ![Elbow curve](images/1.png)
 
-Khi tăng `K`, thuật toán có thêm centroid nên inertia không thể tăng. Vì thế, inertia nhỏ nhất không xác định được `K` tốt nhất; nếu mỗi point là một cluster thì inertia sẽ nhỏ nhất nhưng segmentation không có ích. Elbow là điểm mà thêm cluster mới chỉ làm inertia giảm một lượng nhỏ.
+Khi tăng `K`, thuật toán có thêm centroid nên inertia không thể tăng. Vì thế, inertia nhỏ nhất không xác định được `K` tốt nhất; nếu mỗi khách hàng là một cluster thì inertia sẽ nhỏ nhất nhưng segmentation không có ích. Elbow là điểm mà thêm cluster mới chỉ làm inertia giảm một lượng nhỏ, nhưng điểm gấp này không phải lúc nào cũng rõ ràng.
 
 ## Silhouette kiểm tra cả độ tách biệt và độ chặt
 
@@ -171,8 +199,44 @@ Silhouette score là trung bình của `s(i)` trên toàn bộ point. Giá trị
 
 ![Silhouette score](images/2.svg)
 
-Khác với inertia, silhouette không có một chiều biến động cố định khi `K` tăng. Tôi dùng elbow và silhouette cùng nhau, sau đó kiểm tra các customer profile thu được có khác biệt và có thể giải thích với business hay không.
+Khác với inertia, silhouette không có một chiều biến động cố định khi `K` tăng. Nó giúp so sánh các giá trị `K`, nhưng giá trị silhouette cao nhất không tự động là lựa chọn business tốt nhất. Một phương án có silhouette thấp hơn một chút vẫn có thể phù hợp hơn nếu profile ổn định, đủ lớn và khác biệt có ý nghĩa.
 
-Bước kiểm tra cuối cùng rất quan trọng: một cluster tách biệt về mặt toán học chưa chắc là một customer segment hữu ích.
+## Một cluster hữu ích cần profile, không chỉ cần ID
+
+Với mỗi giá trị `K`, tôi kết hợp elbow và silhouette rồi tạo profiling table. Tối thiểu, bảng này cần có:
+
+| Trường profile | Câu hỏi cần trả lời |
+| --- | --- |
+| Số lượng và tỷ trọng khách hàng | Cluster có đủ lớn để quan tâm không? |
+| Median tuổi và assets under management | Khách hàng điển hình trong cluster có đặc điểm gì? |
+| Tần suất giao dịch mua thuốc và khám bệnh | Hành vi nào phân biệt cluster này với cluster khác? |
+| Chênh lệch so với toàn portfolio | Profile có thực sự nổi bật hay chỉ ở mức trung bình? |
+
+Centroid được tính trong transformed feature space. Khi diễn giải, cần chuyển các giá trị về đơn vị dễ hiểu nếu có thể. Tên cuối cùng nên mô tả profile—chẳng hạn “tài sản cao hơn, giao dịch y tế thường xuyên”—thay vì để nhãn tùy ý như “Cluster 2”.
+
+## Stability quan trọng hơn một biểu đồ đẹp
+
+Segmentation khó sử dụng nếu profile thay đổi mỗi khi đổi random seed hoặc observation period. Vì vậy, tôi coi stability là một bước kiểm tra riêng:
+
+- Chạy K-means với nhiều initialization.
+- So sánh profile giữa các giá trị `K` lân cận.
+- Tính lại segmentation trên một observation window khác.
+- So sánh đặc điểm profile thay vì numeric cluster ID, vì ID có thể bị hoán đổi giữa các lần chạy.
+
+Nếu chỉ một thay đổi nhỏ trong dữ liệu đã tạo ra profile hoàn toàn khác, segmentation đang mô tả một partition mong manh chứ chưa phải customer pattern có thể lặp lại.
+
+## Khi K-means có thể tạo ra hình ảnh sai
+
+K-means hoạt động tốt nhất khi Euclidean distance có ý nghĩa và các cluster tương đối compact. Kết quả kém tin cậy hơn khi:
+
+- Outlier kéo centroid ra xa khách hàng điển hình.
+- Các cluster có kích thước hoặc mật độ rất khác nhau.
+- Nhóm thực tế có hình dạng bất quy tắc, không gần hình cầu.
+- Categorical variable được đưa vào dưới dạng integer code tùy ý.
+- Quá nhiều feature yếu làm khoảng cách mất ý nghĩa.
+
+Những giới hạn này cho thấy elbow và silhouette là cần thiết nhưng chưa đủ. Kết quả cuối vẫn cần kiểm tra ở cấp feature và diễn giải theo business.
+
+Output của phân tích này là các descriptive profile, không phải dự báo ai sẽ mua bảo hiểm. Nếu mục tiêu chuyển thành purchase propensity, cluster profile có thể trở thành một exploratory feature, nhưng không thay thế supervised model và out-of-sample evaluation.
 {% endcapture %}
 <article class="reading-page" data-lang="vi">{{ article_vi | markdownify }}</article>

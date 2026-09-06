@@ -14,7 +14,16 @@ writing_topic: anomaly
 
 # Isolation Forest: Anomalies Need Fewer Random Splits
 
-Isolation Forest does not first learn what a normal cluster looks like. It repeatedly chooses a random feature and a random split value, then measures how many splits are needed to isolate each observation. Points that are few and different tend to be isolated earlier.
+Isolation Forest does not first learn what a normal cluster looks like. It repeatedly chooses a random feature and a random split value, then measures how many splits are needed to isolate each observation. The useful output is an anomaly ranking; the business threshold comes later.
+
+## Define the anomaly unit before fitting the forest
+
+In the synthetic APM dataset, one row contains CPU, memory, latency, and throughput for one span. Five spans share the same trace and synthetic anomaly label. This creates two possible analysis units:
+
+- **Span level:** score each service span independently.
+- **Trace level:** aggregate or combine the five spans and score the request as a unit.
+
+That choice changes both the feature table and the evaluation. If the target is a trace-level incident, a random row split is unsafe because sibling spans from one trace can enter both training and test data. Splitting by `trace_id` keeps an entire request on one side.
 
 ## Random partitions create an isolation path
 
@@ -87,11 +96,25 @@ The main parameters control different parts of the result:
 - Maximum features controls which dimensions are available to each tree.
 - The score threshold controls how many observations are finally labeled anomalous.
 
+The four APM features also have different distributions. CPU and memory are bounded percentages, throughput is a count, and latency has a much wider upper range in the published data. Isolation Forest is less directly scale-sensitive than a Euclidean-distance method such as LOF, but skewed features and extreme ranges still affect where random partitions can isolate points. Feature distributions should be inspected rather than scaled by habit or ignored by habit.
+
 ## A score is not yet an alert
 
 Isolation Forest produces a ranking or score before it produces a business decision. A fixed threshold such as `0.5` or `0.6` is not automatically correct for every dataset. The useful threshold depends on the expected anomaly rate and, more importantly, how many false alerts can be reviewed.
 
 This separation matters in practice: the forest generates anomaly evidence; the operating threshold decides what the team must investigate.
+
+## Evaluate the ranking at trace level and at the review budget
+
+The synthetic `is_anomaly` field is evaluation ground truth, not a model feature. Since anomalies are the minority, accuracy can remain high even when the detector misses them. Evaluation should include precision and recall, a precision–recall curve, and performance at the number of alerts the team can actually review.
+
+Span-level metrics answer whether individual service operations were ranked correctly. Trace-level metrics answer whether the request containing the anomaly was surfaced. Reporting both prevents five anomalous spans from being mistaken for five independent incidents.
+
+## Isolation explains separability, not root cause
+
+A short path tells us that a point was easy to separate through random partitions. It does not prove which feature caused a production incident, and standard feature importance from a supervised model does not automatically apply. Root-cause analysis requires a separate explanation layer and evidence from the relevant trace or logs.
+
+For this project, Isolation Forest is therefore one component: it ranks unusual metric observations. Trace reconstruction, threshold selection, and root-cause evidence remain separate decisions.
 {% endcapture %}
 <article class="reading-page" data-lang="en">{{ article_en | markdownify }}</article>
 
@@ -100,7 +123,16 @@ This separation matters in practice: the forest generates anomaly evidence; the 
 
 # Isolation Forest: anomaly cần ít random split hơn
 
-Isolation Forest không bắt đầu bằng việc học một normal cluster trông như thế nào. Thuật toán liên tục chọn ngẫu nhiên một feature và một split value, sau đó đo số lần split cần thiết để cô lập từng observation. Những point vừa ít vừa khác biệt thường được cô lập sớm hơn.
+Isolation Forest không bắt đầu bằng việc học một normal cluster trông như thế nào. Thuật toán liên tục chọn ngẫu nhiên một feature và một split value, sau đó đo số lần split cần thiết để cô lập từng observation. Output hữu ích trước tiên là anomaly ranking; business threshold được quyết định sau.
+
+## Xác định đơn vị anomaly trước khi fit forest
+
+Trong synthetic APM dataset, một dòng chứa CPU, memory, latency và throughput của một span. Năm span chia sẻ cùng trace và synthetic anomaly label. Điều này tạo ra hai đơn vị phân tích có thể chọn:
+
+- **Span level:** score từng service span độc lập.
+- **Trace level:** aggregate hoặc kết hợp năm span rồi score request như một đơn vị.
+
+Lựa chọn này thay đổi cả feature table lẫn evaluation. Nếu target là incident ở cấp trace, random split theo dòng không an toàn vì sibling span của cùng một trace có thể đi vào cả train và test. Split theo `trace_id` giữ toàn bộ request ở cùng một phía.
 
 ## Random partition tạo isolation path
 
@@ -173,10 +205,24 @@ Các parameter chính kiểm soát những phần khác nhau:
 - Maximum features kiểm soát các dimension tree có thể sử dụng.
 - Score threshold kiểm soát số observation cuối cùng được gắn nhãn anomalous.
 
+Bốn APM feature cũng có distribution khác nhau. CPU và memory là phần trăm có giới hạn, throughput là count, còn latency có upper range rộng hơn nhiều trong dữ liệu đã công bố. Isolation Forest ít phụ thuộc trực tiếp vào scale hơn phương pháp Euclidean-distance như LOF, nhưng skewed feature và extreme range vẫn ảnh hưởng vị trí random partition có thể cô lập point. Cần kiểm tra feature distribution thay vì scaling theo thói quen hoặc bỏ qua theo thói quen.
+
 ## Có score chưa có nghĩa là đã có alert
 
 Isolation Forest tạo ranking hoặc score trước khi tạo business decision. Một threshold cố định như `0.5` hoặc `0.6` không tự động đúng với mọi dataset. Threshold hữu ích phụ thuộc vào expected anomaly rate và quan trọng hơn là số false alert mà nhóm vận hành có thể review.
 
 Sự phân tách này quan trọng trong thực tế: forest tạo anomaly evidence; operating threshold quyết định điều gì team phải điều tra.
+
+## Đánh giá ranking ở cả trace level và review budget
+
+Synthetic field `is_anomaly` là evaluation ground truth, không phải model feature. Vì anomaly thuộc nhóm thiểu số, accuracy vẫn có thể cao dù detector bỏ sót chúng. Evaluation cần gồm precision, recall, precision–recall curve và performance tại số alert mà team thực sự có thể review.
+
+Span-level metric trả lời từng service operation có được xếp hạng đúng không. Trace-level metric trả lời request chứa anomaly có được phát hiện không. Báo cáo cả hai ngăn việc coi năm anomalous span là năm incident độc lập.
+
+## Isolation giải thích khả năng phân tách, không phải root cause
+
+Path ngắn cho biết một point dễ bị tách bằng random partition. Nó không chứng minh feature nào gây ra production incident, và standard feature importance của supervised model không tự động áp dụng ở đây. Root-cause analysis cần một explanation layer riêng cùng evidence từ trace hoặc log liên quan.
+
+Trong project này, Isolation Forest vì thế chỉ là một component: nó xếp hạng metric observation bất thường. Trace reconstruction, threshold selection và root-cause evidence vẫn là những quyết định riêng.
 {% endcapture %}
 <article class="reading-page" data-lang="vi">{{ article_vi | markdownify }}</article>

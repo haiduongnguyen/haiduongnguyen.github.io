@@ -14,7 +14,7 @@ writing_topic: foundations
 
 # Linear Regression: Two Solvers and the Checks After Fitting
 
-Linear regression is useful for more than predicting a continuous value. Its coefficients also describe how the expected outcome changes with the input variables—but that interpretation is only reliable after checking whether the model assumptions are reasonable.
+Linear regression is easy to fit and easy to misuse. Its coefficients can describe how an expected outcome changes with the input variables, but only after the observation unit, feature timing, and model assumptions have been made explicit.
 
 ## One model, from one feature to polynomial features
 
@@ -37,12 +37,18 @@ Linear regression is useful for more than predicting a continuous value. Its coe
 - Predict a continuous output such as house price, stock value, or credit score.
 - Examine a relationship, such as whether a higher interest rate is associated with a higher total savings-book balance.
 
+These goals are not interchangeable. A model can predict well while individual coefficients remain unstable, and a coefficient that describes an association does not prove that changing the feature will cause the outcome to change. In the savings example, customer characteristics may influence both the offered interest rate and the balance.
+
+Before fitting, define one row and one cutoff date. If one row represents one customer at month-end, every predictor must be available by that month-end and the target must belong to the intended future or contemporaneous window. This prevents information from the target period from leaking into the features.
+
 ## Fit the same model in two ways
 
 Given `x` and `y`, the coefficients can be estimated iteratively with gradient descent or directly with matrix operations. Implementing both makes the difference between optimization and a closed-form solution concrete.
 
-- Gradient descent
-- Matrix
+- **Gradient descent:** iteratively reduces the loss and exposes the role of learning rate, feature scale, and convergence.
+- **Matrix solution:** calculates the least-squares coefficients directly and exposes the role of matrix rank and collinearity.
+
+Both approaches estimate the same linear model. They differ in computation, not in the relationship being assumed between the predictors and outcome.
 
 ## Gradient descent updates the slope and intercept iteratively
 
@@ -193,6 +199,8 @@ b
 
 The first form follows the normal equation directly. In production code, `np.linalg.lstsq` is preferable to explicitly calculating a matrix inverse, especially when predictors are close to linearly dependent.
 
+The closed-form expression is useful for understanding the estimator, but explicitly forming an inverse adds numerical risk and unnecessary work. Gradient descent avoids that inverse, although it introduces a learning rate, stopping rule, and sensitivity to feature scale.
+
 ## Benchmark iterative and direct solvers
 
 ```python
@@ -227,9 +235,13 @@ for n, d in sizes:
 
 The larger cases in this benchmark allocate dense matrices and can require substantial memory; they should be run individually rather than treated as a lightweight example.
 
+A fair comparison records more than elapsed time. It should use the same generated data, compare coefficient or prediction error, and report whether either solver failed because of memory, convergence, or an ill-conditioned design matrix. A faster answer is not useful if it is numerically different from the least-squares solution.
+
 ## Check the assumptions after fitting
 
 The fitted coefficients and predictions are not the end of the analysis. The residuals help show whether the linear model is a reasonable description of the data.
+
+The importance of each assumption depends on the goal. Normal residuals are mainly relevant to small-sample inference; they are not a requirement for calculating least-squares predictions. Linearity, leakage, changing variance, dependent observations, and influential points can damage the model even when a normality test looks acceptable.
 
 | Assumption | How to check it | Tool |
 | --- | --- | --- |
@@ -238,6 +250,8 @@ The fitted coefficients and predictions are not the end of the analysis. The res
 | Constant variance | Inspect residuals versus fitted values or run a Breusch–Pagan test | `statsmodels` |
 | Approximately normal residuals | Use a Q–Q plot, histogram, or Shapiro–Wilk test | `shapiro()`, `qqplot()` |
 | No severe multicollinearity | Calculate the Variance Inflation Factor | `variance_inflation_factor()` |
+
+Residual plots diagnose patterns left by the fitted model; they do not prove that the data-generating assumptions are true. Independence in particular comes mainly from the sampling and time structure. A Durbin–Watson statistic cannot repair duplicated customers, overlapping time windows, or another dependence introduced during dataset construction.
 
 ### Inspect the residual distribution visually
 
@@ -303,6 +317,8 @@ When several predictors carry overlapping information, there are three practical
 
 The choice depends on the goal. Removing or combining features changes interpretation; regularization keeps the model predictive while shrinking unstable coefficients.
 
+For explanation, removing a redundant feature may preserve a coefficient that the business can still interpret. For prediction, Ridge often keeps correlated signals without forcing an arbitrary winner. PCA can reduce dimension but replaces named business variables with linear combinations. Lasso performs selection through shrinkage, yet among strongly correlated predictors the selected variable can change across samples.
+
 ## PCA keeps directions with the most variance
 
 For a square matrix `A`, an eigenvector `v` and eigenvalue `λ` satisfy:
@@ -340,6 +356,19 @@ Ridge adds an L2 penalty and shrinks correlated coefficients. Lasso adds an L1 p
 ### Lasso solution
 
 ![Lasso solution](images/11.png)
+
+## Choose the response to match the failure
+
+| Observed problem | First response to consider |
+| --- | --- |
+| Curved residual pattern | Add justified nonlinear structure or change the model |
+| Variance grows with fitted value | Revisit the target scale or use inference robust to heteroscedasticity |
+| Serially correlated errors | Model the time or group dependence explicitly |
+| High VIF but prediction remains stable | Prefer regularization if prediction is the goal |
+| High VIF and coefficients must be explained | Remove, combine, or redefine overlapping features |
+| A few rows control the fitted line | Inspect influential observations and the data-generation process |
+
+The solver answers how to estimate the coefficients. Residual checks, validation data, and the intended use of those coefficients answer whether the fitted model deserves to be used.
 {% endcapture %}
 <article class="reading-page" data-lang="en">{{ article_en | markdownify }}</article>
 
@@ -348,7 +377,7 @@ Ridge adds an L2 penalty and shrinks correlated coefficients. Lasso adds an L1 p
 
 # Linear Regression: hai cách giải và các kiểm tra sau khi fit
 
-Linear regression không chỉ dùng để dự báo một giá trị liên tục. Các coefficient còn mô tả expected outcome thay đổi thế nào theo input variable—nhưng cách diễn giải đó chỉ đáng tin sau khi kiểm tra các assumption của mô hình có hợp lý hay không.
+Linear regression dễ fit nhưng cũng dễ dùng sai. Coefficient có thể mô tả expected outcome thay đổi thế nào theo input variable, nhưng chỉ sau khi đơn vị observation, thời điểm tạo feature và assumption của mô hình được xác định rõ.
 
 ## Một mô hình, từ một feature đến polynomial features
 
@@ -371,9 +400,18 @@ Linear regression không chỉ dùng để dự báo một giá trị liên tụ
 - Dự báo output liên tục như giá nhà, giá cổ phiếu hoặc credit score.
 - Kiểm tra một mối quan hệ, chẳng hạn lãi suất cao hơn có liên hệ với tổng số dư sổ tiết kiệm cao hơn hay không.
 
+Hai mục tiêu này không giống nhau. Một mô hình có thể dự báo tốt trong khi từng coefficient thiếu ổn định; một coefficient mô tả association cũng không chứng minh rằng thay đổi feature sẽ gây ra thay đổi ở outcome. Trong ví dụ tiền gửi, đặc điểm khách hàng có thể ảnh hưởng đồng thời đến lãi suất được áp dụng và số dư.
+
+Trước khi fit, cần định nghĩa một dòng dữ liệu và cutoff date. Nếu một dòng đại diện cho một khách hàng tại cuối tháng, mọi predictor phải có trước thời điểm đó và target phải thuộc đúng cửa sổ hiện tại hoặc tương lai đã xác định. Quy tắc này ngăn thông tin từ target period rò rỉ vào feature.
+
 ## Fit cùng một mô hình theo hai cách
 
 Với `x` và `y`, các coefficient có thể được ước lượng theo cách lặp bằng gradient descent hoặc giải trực tiếp bằng matrix operations. Tự triển khai cả hai giúp nhìn rõ khác biệt giữa optimization và closed-form solution.
+
+- **Gradient descent:** giảm loss theo từng vòng lặp, qua đó thể hiện vai trò của learning rate, feature scale và convergence.
+- **Matrix solution:** tính trực tiếp least-squares coefficient, qua đó thể hiện vai trò của matrix rank và collinearity.
+
+Hai cách cùng ước lượng một linear model. Chúng khác nhau về tính toán, không khác nhau về quan hệ được giả định giữa predictor và outcome.
 
 ## Gradient descent cập nhật slope và intercept theo từng vòng lặp
 
@@ -524,6 +562,8 @@ b
 
 Cách đầu tiên đi trực tiếp theo normal equation. Trong production code, `np.linalg.lstsq` phù hợp hơn việc tính matrix inverse, đặc biệt khi các predictor gần linearly dependent.
 
+Closed-form expression hữu ích để hiểu estimator, nhưng tính inverse trực tiếp làm tăng rủi ro số học và khối lượng tính toán không cần thiết. Gradient descent tránh phép inverse đó, đổi lại cần learning rate, stopping rule và phụ thuộc vào feature scale.
+
 ## Benchmark iterative solver và direct solver
 
 ```python
@@ -558,9 +598,13 @@ for n, d in sizes:
 
 Các trường hợp lớn trong benchmark tạo dense matrix và có thể cần nhiều memory; nên chạy riêng từng trường hợp thay vì xem đây là một ví dụ nhẹ.
 
+Một benchmark công bằng cần ghi nhận nhiều hơn elapsed time. Hai solver phải dùng cùng dữ liệu sinh ra, đồng thời so sánh coefficient hoặc prediction error và ghi nhận trường hợp thất bại do memory, convergence hay design matrix bị ill-conditioned. Kết quả nhanh hơn không có ích nếu khác biệt về mặt số học so với least-squares solution.
+
 ## Kiểm tra assumption sau khi fit
 
 Coefficient và prediction chưa phải điểm kết thúc. Residual giúp kiểm tra linear model có mô tả dữ liệu hợp lý hay không.
+
+Mức độ quan trọng của từng assumption phụ thuộc vào mục tiêu. Normal residual chủ yếu liên quan đến inference trên sample nhỏ; đây không phải điều kiện để tính least-squares prediction. Linearity, leakage, phương sai thay đổi, observation phụ thuộc và influential point vẫn có thể làm mô hình sai dù normality test trông hợp lệ.
 
 | Assumption | Cách kiểm tra | Tool |
 | --- | --- | --- |
@@ -569,6 +613,8 @@ Coefficient và prediction chưa phải điểm kết thúc. Residual giúp ki�
 | Phương sai không đổi | Xem residual theo fitted value hoặc chạy Breusch–Pagan test | `statsmodels` |
 | Residual gần phân phối chuẩn | Dùng Q–Q plot, histogram hoặc Shapiro–Wilk test | `shapiro()`, `qqplot()` |
 | Không có multicollinearity nghiêm trọng | Tính Variance Inflation Factor | `variance_inflation_factor()` |
+
+Residual plot chẩn đoán pattern còn lại sau khi fit; nó không chứng minh các assumption sinh dữ liệu là đúng. Independence đặc biệt phụ thuộc vào cách lấy mẫu và cấu trúc thời gian. Durbin–Watson không thể sửa việc lặp khách hàng, chồng lấn time window hoặc một dạng phụ thuộc khác được tạo ra khi dựng dataset.
 
 ### Kiểm tra trực quan phân phối residual
 
@@ -634,6 +680,8 @@ Khi nhiều predictor chứa thông tin trùng nhau, có ba lựa chọn thực 
 
 Lựa chọn phụ thuộc vào mục tiêu. Bỏ hoặc kết hợp feature làm thay đổi khả năng diễn giải; regularization giữ mô hình phục vụ prediction nhưng thu nhỏ các coefficient thiếu ổn định.
 
+Nếu mục tiêu là giải thích, bỏ một feature dư thừa có thể giữ lại coefficient mà business vẫn diễn giải được. Nếu mục tiêu là prediction, Ridge thường giữ các tín hiệu tương quan mà không buộc một biến thắng tùy ý. PCA giảm số chiều nhưng thay các business variable có tên bằng linear combination. Lasso thực hiện selection thông qua shrinkage, nhưng giữa các predictor tương quan mạnh, biến được chọn có thể thay đổi theo sample.
+
 ## PCA giữ các hướng có nhiều variance nhất
 
 Với square matrix `A`, eigenvector `v` và eigenvalue `λ` thỏa mãn:
@@ -671,5 +719,18 @@ Ridge thêm L2 penalty và thu nhỏ các coefficient tương quan. Lasso thêm 
 ### Nghiệm Lasso
 
 ![Lasso solution](images/11.png)
+
+## Chọn cách xử lý đúng với failure quan sát được
+
+| Vấn đề quan sát được | Cách xử lý nên cân nhắc đầu tiên |
+| --- | --- |
+| Residual có pattern cong | Thêm nonlinear structure có căn cứ hoặc đổi mô hình |
+| Variance tăng theo fitted value | Xem lại target scale hoặc dùng inference chịu được heteroscedasticity |
+| Error có serial correlation | Mô hình hóa rõ dependence theo thời gian hoặc theo group |
+| VIF cao nhưng prediction ổn định | Ưu tiên regularization nếu mục tiêu là prediction |
+| VIF cao và coefficient cần diễn giải | Loại, kết hợp hoặc định nghĩa lại các feature chồng lấn |
+| Một số ít dòng chi phối fitted line | Kiểm tra influential observation và quá trình sinh dữ liệu |
+
+Solver trả lời cách ước lượng coefficient. Residual check, validation data và mục đích sử dụng coefficient mới trả lời liệu mô hình đã fit có đáng được sử dụng hay không.
 {% endcapture %}
 <article class="reading-page" data-lang="vi">{{ article_vi | markdownify }}</article>

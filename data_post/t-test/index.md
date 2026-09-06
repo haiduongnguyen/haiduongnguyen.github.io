@@ -14,7 +14,7 @@ writing_topic: statistics
 
 # Choose the T-Test From the Data Structure
 
-A t-test evaluates a difference in means relative to the uncertainty in that difference. The first decision is not the significance level or the Python function; it is whether the data represent one sample, two independent groups, or paired observations.
+A t-test evaluates a difference in means relative to the uncertainty in that difference. The first decision is not the significance level or the Python function; it is whether the data represent one sample, two independent groups, or paired observations. That relationship comes from data collection, not from how two columns happen to appear in a table.
 
 ## Read the t-statistic and p-value separately
 
@@ -25,13 +25,15 @@ A t-test evaluates a difference in means relative to the uncertainty in that dif
 
 If `p < α`, where `α` is chosen before looking at the result, reject `H₀`. This decision does not tell us whether the difference is large enough to matter in practice.
 
+A complete result should therefore report the estimated mean difference and a confidence interval alongside the p-value. The interval shows both direction and plausible magnitude; the p-value alone answers neither.
+
 ## Check the assumptions for the test you selected
 
 The assumptions apply to the observations or differences being modeled:
 
 1. **Numeric outcome:** the measured variable should be quantitative.
 2. **Independent observations:** required between subjects; paired measurements are handled as within-subject differences.
-3. **Approximate normality:** the sample values for a one-sample test, each group for a small independent test, or the pairwise differences for a paired test should be approximately normal. A Q–Q plot or Shapiro–Wilk test can help check this.
+3. **Approximate normality:** the sample values for a one-sample test, each group for a small independent test, or the pairwise differences for a paired test should be approximately normal. A Q–Q plot can reveal severe skewness and outliers. A Shapiro–Wilk result should not be used as an automatic switch because large samples can detect departures too small to matter.
 4. **Equal variances:** required by the pooled independent t-test, but not by Welch's t-test. When equal variance is not defensible, use Welch's version.
 
 ## The three tests answer different questions
@@ -43,21 +45,21 @@ There are three main types of T-tests depending on the structure of your data an
 - **Formula:** `t = (x̄ - μ) / (s / √n)`
   (`x̄` = sample mean, `μ` = reference mean, `s` = sample standard deviation, `n` = sample size)
 
-- **Example:** A teacher has a class of 30 students and wants to test whether their average height differs from `170 cm`.
+- **Example:** Test whether the mean transaction-processing time from a sample differs from a `2`-second reference value.
 
 ### Independent t-test: compare two unrelated groups
 
 - **Formula under equal variances:** `t = (x̄₁ - x̄₂) / (sₚ × √(1/n₁ + 1/n₂))`
   (`sₚ` is the pooled standard deviation.)
 
-- **Example:** A teacher wants to test if there is a significant height difference between Class A and Class B.
+- **Example:** Compare mean card spending between customers randomly assigned to a campaign and an independent control group. If assignment was not random, the test describes a difference but does not by itself establish that the campaign caused it.
 
 ### Paired t-test: test the within-pair differences
 
 - **Formula:** `t = d̄ / (s_d / √n)`
   (`d̄` = mean paired difference, `s_d` = standard deviation of the differences.)
 
-- **Example:** Measuring the weight of 20 patients *before* and *after* an 8-week diet plan.
+- **Example:** Compare the monthly balance of the same customers before and after a product change. The test operates on each customer's within-pair difference, not on two unrelated columns of balances.
 
 ---
 
@@ -137,6 +139,14 @@ else:
 - Use a **paired t-test** when the same subjects are measured twice or observations are explicitly matched.
 
 The pairing or independence comes from how the data were collected. It cannot be inferred from the two columns after the fact.
+
+## Statistical significance is not business significance
+
+With a large sample, a small and operationally irrelevant difference can produce a small p-value. With a small sample, a meaningful difference may remain uncertain. Report the sample sizes, mean difference, confidence interval, and an effect size such as Cohen's `d` when its assumptions are appropriate.
+
+If many segments, products, or time windows are tested, the chance of at least one false positive increases. Those comparisons should be planned in advance or handled with a multiple-testing procedure rather than selecting only the smallest p-value afterward.
+
+The useful sequence is: define the comparison, identify whether observations are independent or paired, choose the test, inspect the effect and uncertainty, and only then interpret the p-value.
 {% endcapture %}
 <article class="reading-page" data-lang="en">{{ article_en | markdownify }}</article>
 
@@ -145,7 +155,7 @@ The pairing or independence comes from how the data were collected. It cannot be
 
 # Chọn T-test từ cấu trúc dữ liệu
 
-T-test đánh giá chênh lệch trung bình so với mức uncertainty của chênh lệch đó. Quyết định đầu tiên không phải significance level hay hàm Python; cần xác định dữ liệu là một sample, hai group độc lập hay các observation theo cặp.
+T-test đánh giá chênh lệch trung bình so với mức uncertainty của chênh lệch đó. Quyết định đầu tiên không phải significance level hay hàm Python; cần xác định dữ liệu là một sample, hai group độc lập hay các observation theo cặp. Quan hệ này đến từ cách thu thập dữ liệu, không phải cách hai column tình cờ xuất hiện trong bảng.
 
 ## Đọc t-statistic và p-value riêng biệt
 
@@ -156,13 +166,15 @@ T-test đánh giá chênh lệch trung bình so với mức uncertainty của ch
 
 Nếu `p < α`, với `α` được chọn trước khi xem kết quả, bác bỏ `H₀`. Quyết định này không cho biết chênh lệch có đủ lớn để mang ý nghĩa thực tế hay không.
 
+Vì vậy, một kết quả đầy đủ cần báo cáo estimated mean difference và confidence interval cùng với p-value. Interval cho biết cả hướng và độ lớn hợp lý; p-value một mình không trả lời được hai điều đó.
+
 ## Kiểm tra assumption cho test đã chọn
 
 Assumption áp dụng cho observation hoặc difference đang được model:
 
 1. **Numeric outcome:** biến được đo phải là quantitative.
 2. **Observation độc lập:** cần thiết giữa các subject; paired measurement được xử lý dưới dạng within-subject difference.
-3. **Gần phân phối chuẩn:** sample value của one-sample test, từng group trong independent test có sample nhỏ, hoặc pairwise difference trong paired test nên gần phân phối chuẩn. Có thể kiểm tra bằng Q–Q plot hoặc Shapiro–Wilk test.
+3. **Gần phân phối chuẩn:** sample value của one-sample test, từng group trong independent test có sample nhỏ, hoặc pairwise difference trong paired test nên gần phân phối chuẩn. Q–Q plot có thể phát hiện skewness mạnh và outlier. Không nên dùng Shapiro–Wilk như công tắc tự động vì sample lớn có thể phát hiện sai lệch quá nhỏ để tạo ý nghĩa thực tế.
 4. **Equal variance:** pooled independent t-test cần assumption này, nhưng Welch's t-test thì không. Khi không thể bảo vệ giả định equal variance, dùng Welch's version.
 
 ## Ba test trả lời ba câu hỏi khác nhau
@@ -172,21 +184,21 @@ Assumption áp dụng cho observation hoặc difference đang được model:
 - **Công thức:** `t = (x̄ - μ) / (s / √n)`
   (`x̄` = sample mean, `μ` = reference mean, `s` = sample standard deviation, `n` = sample size)
 
-- **Ví dụ:** một giáo viên có lớp gồm 30 học sinh và muốn kiểm tra average height của lớp có khác `170 cm` hay không.
+- **Ví dụ:** kiểm tra mean transaction-processing time của một sample có khác reference value `2` giây hay không.
 
 ### Independent t-test: so sánh hai group không liên quan
 
 - **Công thức khi equal variance:** `t = (x̄₁ - x̄₂) / (sₚ × √(1/n₁ + 1/n₂))`
   (`sₚ` là pooled standard deviation.)
 
-- **Ví dụ:** giáo viên muốn kiểm tra chiều cao trung bình của Lớp A và Lớp B có khác nhau hay không.
+- **Ví dụ:** so sánh mean card spending giữa khách hàng được random vào campaign và một control group độc lập. Nếu assignment không ngẫu nhiên, test mô tả chênh lệch nhưng không tự chứng minh campaign đã gây ra chênh lệch đó.
 
 ### Paired t-test: kiểm định within-pair difference
 
 - **Công thức:** `t = d̄ / (s_d / √n)`
   (`d̄` = mean paired difference, `s_d` = standard deviation của các difference.)
 
-- **Ví dụ:** đo cân nặng của cùng 20 bệnh nhân trước và sau chương trình ăn kiêng kéo dài tám tuần.
+- **Ví dụ:** so sánh monthly balance của cùng khách hàng trước và sau một thay đổi sản phẩm. Test hoạt động trên within-pair difference của từng khách hàng, không phải hai column balance không liên quan.
 
 ## Chạy cả ba test bằng SciPy
 
@@ -264,5 +276,13 @@ else:
 - Dùng **paired t-test** khi cùng subject được đo hai lần hoặc các observation được match rõ ràng.
 
 Pairing hay independence đến từ cách dữ liệu được thu thập. Không thể suy ra điều đó từ hai column sau khi dữ liệu đã được tạo.
+
+## Statistical significance không phải business significance
+
+Với sample lớn, một chênh lệch nhỏ và không quan trọng về vận hành vẫn có thể tạo p-value nhỏ. Với sample nhỏ, một chênh lệch có ý nghĩa vẫn có thể chứa nhiều uncertainty. Cần báo cáo sample size, mean difference, confidence interval và effect size như Cohen's `d` khi assumption của nó phù hợp.
+
+Nếu kiểm định nhiều segment, product hoặc time window, xác suất xuất hiện ít nhất một false positive sẽ tăng. Các phép so sánh đó cần được lên kế hoạch trước hoặc xử lý bằng multiple-testing procedure, thay vì chỉ chọn p-value nhỏ nhất sau khi xem kết quả.
+
+Trình tự hữu ích là: xác định phép so sánh, nhận diện observation độc lập hay theo cặp, chọn test, kiểm tra effect và uncertainty, rồi mới diễn giải p-value.
 {% endcapture %}
 <article class="reading-page" data-lang="vi">{{ article_vi | markdownify }}</article>

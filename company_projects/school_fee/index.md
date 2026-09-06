@@ -116,34 +116,34 @@ The central lesson is simple: first establish that a transaction is a school-fee
 
 # Thanh toán học phí: nhận diện trước khi dự báo
 
-Dự báo chưa phải bài toán đầu tiên. Trước khi ước tính khi nào khách hàng sẽ thanh toán học phí và số tiền là bao nhiêu, trước hết cần xác định giao dịch ngân hàng nào thực sự là học phí và, khi có thể, trường nào đã nhận khoản tiền đó.
+Dự báo chưa phải bài toán đầu tiên. Trước khi ước tính khi nào khách hàng sẽ thanh toán học phí và số tiền là bao nhiêu, cần xác định giao dịch ngân hàng nào thực sự là học phí và, khi có thể, trường nào đã nhận khoản tiền đó. Nếu không, mô hình có thể tạo ra những dự báo trông rất chính xác nhưng lại dành cho sai giao dịch.
 
-## Các use case cần những thông tin gì?
+## Các use case cần nhiều hơn một nhãn học phí
 
-Học phí là một trong những khoản chi tương đối đều đặn và có thể dự đoán của gia đình có con đi học. Sau khi được nhận diện, các khoản thanh toán này có thể hỗ trợ ba use case:
+Thanh toán học phí thường lặp lại quanh kỳ thu tiền riêng của từng trường, dù thời điểm và số tiền có thể thay đổi giữa các học kỳ. Sau khi được nhận diện, các khoản thanh toán này có thể hỗ trợ ba use case:
 
 | Use case | Thông tin cần có | Cách sử dụng |
 | --- | --- | --- |
 | Unsecured lending | Thời điểm và số tiền thanh toán dự kiến (ticket size) | Ước tính một dòng tiền ra có tính chu kỳ |
-| Khả năng tài chính | Số tiền học phí và tần suất thanh toán trong quá khứ | Dùng như một tín hiệu gián tiếp về khả năng tài chính |
+| Khả năng tài chính | Số tiền học phí và tần suất thanh toán trong quá khứ | Dùng như một tín hiệu hỗ trợ, không phải kết luận độc lập về khả năng tài chính |
 | Credit card | Các tháng tập trung thanh toán học phí | Chọn thời điểm chạy campaign theo mùa |
 
-Vì vậy, chỉ có nhãn school fee là chưa đủ. Output hữu ích cần cho biết khách hàng, trường được match, thời gian có khả năng thanh toán và số tiền dự kiến.
+Vì vậy, chỉ có nhãn học phí là chưa đủ. Output hữu ích cần bốn trường: khách hàng, trường được nhận diện, kỳ thanh toán có khả năng xảy ra và số tiền dự kiến.
 
-## Một giao dịch học phí lý tưởng có hình dạng như thế nào?
+## Giao dịch lý tưởng xác định được cả hai phía
 
 Trong trường hợp lý tưởng, cả hai phía của giao dịch đều được xác định:
 
 - Người gửi: phụ huynh hoặc học sinh, sinh viên.
 - Người nhận: trường học.
 
-Khi biết được cả hai entity, mục đích giao dịch dễ xác định hơn nhiều.
+Khi biết được cả hai phía, mục đích thanh toán dễ xác định hơn nhiều. Tuy nhiên, trên thực tế ngân hàng thường nhìn rõ người gửi hơn người nhận.
 
 ![Giao dịch giữa khách hàng và trường học](images/1.png)
 
-## Vì sao không thể chỉ nhận diện từ phía người nhận?
+## Dữ liệu phía người nhận không đầy đủ khi trường dùng ngân hàng khác
 
-Tại Việt Nam, các trường sử dụng tài khoản ở nhiều ngân hàng khác nhau, trong khi chỉ một phần nhỏ sử dụng tài khoản TCB. Vì vậy, dữ liệu nội bộ phần lớn không có thông tin đầy đủ về trường ở phía người nhận; chỉ dựa vào receiver account sẽ không thể nhận diện học phí một cách đáng tin cậy.
+Tại Việt Nam, các trường sử dụng tài khoản ở nhiều ngân hàng khác nhau, trong khi chỉ một phần nhỏ sử dụng tài khoản TCB. Khi khách hàng thanh toán cho trường ở ngân hàng khác, thông tin phía người nhận có trong dữ liệu nội bộ bị giới hạn. Vì vậy, chỉ dựa vào ID tài khoản nhận sẽ không thể xây dựng danh sách trường đầy đủ.
 
 Tín hiệu định danh chính có thể sử dụng là beneficiary name, thường chứa tên trường. Tuy nhiên, tín hiệu này khá nhiễu:
 
@@ -151,36 +151,62 @@ Tín hiệu định danh chính có thể sử dụng là beneficiary name, thư
 - Tên viết tắt và các biến thể chính tả xuất hiện thường xuyên.
 - Nhiều trường có tên giống hoặc gần giống nhau.
 
-Vì thế, matching theo beneficiary name có thể gán giao dịch vào sai trường hoặc nhận nhầm một giao dịch không phải học phí.
+Ví dụ, tên đầy đủ `TRUONG TRUNG HOC PHO THONG <TEN>` có thể xuất hiện dưới dạng `THPT <TEN>` hoặc `TRUONG <TEN>`. Các biến thể này có thể chỉ cùng một trường, nhưng cùng một tên rút gọn cũng có thể thuộc nhiều trường khác nhau. Vì thế, đối chiếu theo tên người thụ hưởng có thể gán giao dịch vào sai trường hoặc nhận nhầm một giao dịch không phải học phí.
 
-## Cách xây dựng tập giao dịch học phí
+## Keyword tạo candidate; hành vi lặp lại dùng để xác thực
 
-Quy trình nhận diện gồm:
+Quy trình nhận diện tách bước tạo candidate rộng khỏi bước xác thực chặt hơn:
 
-1. Tạo candidate set từ beneficiary name chứa các keyword liên quan đến trường học như `Truong`, `Tieu hoc`, `Trung hoc` và `Dai hoc`.
-2. Phân tích các khách hàng liên quan theo tần suất, số tiền và thời điểm thanh toán.
-3. Lọc các trường hợp lệ dựa trên số giao dịch, số khách hàng và tính nhất quán của hoạt động thanh toán. Một tín hiệu consistency hữu ích là cùng một khách hàng chuyển tiền đến cùng một trường qua nhiều tháng hoặc nhiều năm.
-4. Xử lý các tên trường không rõ ràng và loại những false positive có khả năng cao.
-5. Chốt tập giao dịch học phí.
-6. Tổng hợp feature theo cả góc nhìn khách hàng và trường học, sau đó đưa vào feature mart.
+1. Tạo candidate set có recall cao từ tên người thụ hưởng chứa keyword liên quan đến trường học. Danh sách có thể gồm `Truong`, `Tieu hoc`, `TH`, `Trung hoc`, `THCS`, `THPT`, `Dai hoc`, `DH`, `Mam non`, `Mau giao` và `Hoc phi`.
+2. Phân tích các khách hàng liên quan đến từng candidate theo tần suất, số tiền và thời điểm thanh toán.
+3. Kiểm tra tính nhất quán ở cấp khách hàng: cùng một khách hàng chuyển tiền đến cùng một trường qua nhiều tháng hoặc nhiều năm là bằng chứng mạnh hơn một giao dịch đơn lẻ.
+4. Kiểm tra tính nhất quán ở cấp người nhận: số giao dịch, số khách hàng và mức độ tập trung quanh các kỳ thu tiền lặp lại giúp phân biệt trường học với một keyword trùng ngẫu nhiên.
+5. Xử lý tên trường không rõ ràng và loại các false positive có khả năng cao.
+6. Chốt tập giao dịch học phí, tổng hợp feature theo cả góc nhìn khách hàng và trường học, sau đó đưa vào feature mart.
 
-Bước preprocessing này quyết định giao dịch nào được đưa vào phân tích phía sau. Nếu tập giao dịch được nhận diện sai, mô hình forecast chỉ tạo ra những kết quả trông chính xác cho các khoản thanh toán không đúng.
+Danh sách keyword chủ động ưu tiên recall; các kiểm tra hành vi cung cấp precision. Nếu coi keyword match là nhãn cuối cùng, hai nhiệm vụ này bị gộp làm một và false positive sẽ đi vào mọi phân tích phía sau.
 
-## Chỉ phân tích time series sau khi đã nhận diện
+## Bài toán dự báo có ba target riêng
 
-Với 3–4 năm giao dịch đã được nhận diện, chúng tôi chuyển các khoản thanh toán hằng tháng của từng khách hàng thành một time series. Time-series decomposition tách chuỗi thành trend, seasonality và residual; các thành phần này được dùng để dự báo thanh toán trong ba tháng tiếp theo.
+Với 3–4 năm giao dịch đã được nhận diện, chúng tôi chuyển các khoản thanh toán hằng tháng của từng khách hàng thành time series. Dự báo cuối cùng dễ kiểm soát hơn khi được tách thành ba target:
 
-Chúng tôi đồng thời tạo bảng dự báo thứ hai ở cấp độ trường. Với mỗi trường, bảng này dự báo những phụ huynh có khả năng thanh toán dựa trên pattern thu tiền của trường. Nếu Trường A thường thu học phí vào tháng 1 và tháng 8, những khách hàng từng thanh toán cho Trường A được kỳ vọng sẽ đi theo lịch tương tự.
+1. **Có hay không:** khách hàng có khả năng phát sinh thanh toán học phí trong ba tháng tới không?
+2. **Khi nào:** giao dịch có khả năng xuất hiện nhất vào tháng nào?
+3. **Ở đâu và bao nhiêu:** trường nào từng xuất hiện trong lịch sử là người nhận có khả năng cao nhất, và ticket size dự kiến là bao nhiêu?
 
-Như vậy có hai góc nhìn cho kỳ thanh toán tiếp theo:
+Time-series decomposition tách trend, seasonality và residual để hỗ trợ ước tính thời điểm và số tiền. Quan hệ trường–khách hàng trong quá khứ cung cấp candidate cho phía người nhận; không kỳ vọng một time-series model tự suy ra toàn bộ các target.
+
+## Hai bảng dự báo cung cấp hai nguồn evidence độc lập
+
+Quy trình tạo ra hai góc nhìn cho kỳ thanh toán tiếp theo:
 
 - **Dự báo theo khách hàng:** với từng khách hàng, dự báo trường họ sẽ thanh toán, thời điểm và số tiền.
-- **Dự báo theo trường:** với từng trường, dự báo những phụ huynh có khả năng thanh toán trong kỳ thu tiền.
+- **Dự báo theo trường:** với từng trường, xét những khách hàng từng thanh toán tại đó và dự báo ai có khả năng thanh toán trong kỳ thu tiền tiếp theo.
+
+Góc nhìn theo trường dùng pattern thu tiền của trường thay vì coi mọi khách hàng là candidate. Nếu Trường A thường thu học phí vào tháng 1 và tháng 8, những khách hàng từng thanh toán cho Trường A sẽ có khả năng cao hơn trong các kỳ đó.
 
 Khách hàng xuất hiện trong cả hai bảng dự báo được ưu tiên triển khai trước. Hai nhóm còn lại—chỉ xuất hiện trong bảng theo khách hàng và chỉ xuất hiện trong bảng theo trường—vẫn được giữ lại và đánh dấu riêng.
 
-Sau kỳ thanh toán, kết quả của ba nhóm được đo độc lập. So sánh nhóm giao nhau, nhóm customer-only và nhóm school-only cho biết method nào tạo ra dự báo hữu ích, từ đó cung cấp bằng chứng để cải tiến phương pháp cho tháng tiếp theo hoặc năm học tiếp theo.
+## Ba cohort cho biết góc nhìn nào thực sự tạo thêm giá trị
 
-(*) Time-series decomposition và các phương pháp liên quan sẽ được trình bày trong một bài kỹ thuật riêng.
+Sau kỳ thanh toán, ba cohort được đánh giá riêng:
+
+| Cohort | Lý do giữ lại |
+| --- | --- |
+| Customer ∩ School | Hai góc nhìn đồng thuận; nhóm này được ưu tiên triển khai cao nhất |
+| Customer only | Đo giá trị tăng thêm từ lịch sử cấp khách hàng |
+| School only | Đo giá trị tăng thêm từ pattern thu tiền của trường |
+
+Với từng cohort, có thể kiểm tra độc lập bốn outcome: giao dịch có xảy ra trong prediction window không, trường có đúng không, kỳ thanh toán dự báo lệch kỳ thực tế bao xa và ticket size dự báo sai bao nhiêu. Một nhãn “dự báo đúng” duy nhất sẽ che mất phần nào của dự báo đã thất bại.
+
+So sánh ba cohort trên cùng observation window cho biết góc nhìn nào tạo ra dự báo hữu ích. Kết quả đó trở thành căn cứ cải tiến cho tháng tiếp theo hoặc năm học tiếp theo, thay vì chỉ giữ nhóm giao nhau mà không có bằng chứng.
+
+## Những gì phương pháp này vẫn không quan sát được
+
+Phương pháp phụ thuộc vào lịch sử giao dịch. Khách hàng mới chưa từng thanh toán học phí có thể không xuất hiện trong cả hai bảng dự báo. Việc khách hàng chuyển trường cũng có thể làm quan hệ khách hàng–trường trong quá khứ mất hiệu lực. Coverage phía người nhận vẫn không đầy đủ khi trường dùng ngân hàng khác, kể cả sau khi phân tích tên người thụ hưởng.
+
+Bài này mô tả thiết kế nhận diện và đánh giá, không công bố model performance. Time-series decomposition và phần triển khai cụ thể nằm ngoài phạm vi bài và sẽ được trình bày trong một bài kỹ thuật riêng.
+
+Nguyên tắc cốt lõi rất đơn giản: trước hết phải xác lập giao dịch thực sự là học phí, sau đó mới dự báo thời điểm và số tiền. Forecast tốt hơn không thể sửa một tập giao dịch bị gán nhãn sai.
 {% endcapture %}
 <article class="reading-page" data-lang="vi">{{ article_vi | markdownify }}</article>
